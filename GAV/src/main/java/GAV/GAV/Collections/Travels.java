@@ -23,7 +23,7 @@ public class Travels {
     public enum TravelStatus {
         REQUESTED, ASSIGNED,
         CANCELLED, COMPLETED,
-        IN_PROGRESS
+        IN_PROGRESS, FINISHED
     }
     private String idClient;
     private String idDriver;
