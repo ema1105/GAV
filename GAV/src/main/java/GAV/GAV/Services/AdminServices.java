@@ -115,7 +115,7 @@ public class AdminServices {
     // -------------------- VEHÍCULOS --------------------
 
     public Cars registerCar(Cars car) {
-        if (carsRepository.existByPlate(car.getPlate()))
+        if (carsRepository.existsByPlate(car.getPlate()))
             throw new RuntimeException("La placa ya está registrada.");
         return carsRepository.save(car);
     }

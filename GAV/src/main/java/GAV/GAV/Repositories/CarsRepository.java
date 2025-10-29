@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CarsRepository extends MongoRepository<Cars,String> {
 
-    boolean existByPlate(String plate);
+    boolean existsByPlate(String plate);
 
     Cars findByPlate(String plate);
 

@@ -11,7 +11,7 @@ public class MapboxConfig {
     @Value("${mapbox.geocoding.url}")
     private String geocodingUrl;
 
-    @Value("${mapbox.direcctions.url}")
+    @Value("${mapbox.directions.url}")
     private String directionsUrl;
 
     public String getToken(){
@@ -21,6 +21,6 @@ public class MapboxConfig {
         return geocodingUrl;
     }
     public String getDirectionsUrl(){
-        return geocodingUrl;
+        return  directionsUrl;
     }
 }
