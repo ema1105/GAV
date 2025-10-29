@@ -2,6 +2,7 @@ package GAV.GAV.Services;
 import GAV.GAV.Collections.Users;
 import GAV.GAV.Repositories.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -129,4 +130,31 @@ public class UsersService {
         driver.setAvailability(available);
         usersRepository.save(driver);
     }
+    //----------------------CREACION DEL USUARIO ADMIN POR DEFECTO---------------
+
+    public void createDefaultAdmin() {
+        String defaultAdminEmail = "admin@gav.com";
+
+        // Verificar si ya existe un usuario administrador
+        Optional<Users> existingAdmin = usersRepository.findByEmail(defaultAdminEmail);
+        if (existingAdmin.isPresent()) {
+            System.out.println("Usuario administrador ya existe: " + defaultAdminEmail);
+            return;
+        }
+
+        Users admin = new Users();
+        admin.setUsername("admin");
+        admin.setFullname("Administrador");
+        admin.setLastname("GAV");
+        admin.setEmail(defaultAdminEmail);
+        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setRol(Users.Roles.ADMINISTRATOR);
+        admin.setNumber("0000000000");
+        admin.setDocumentNumber("00000000");
+        admin.setAvailability(false);
+
+        usersRepository.save(admin);
+        System.out.println("Usuario administrador creado automáticamente: " + defaultAdminEmail + " / admin123");
+    }
+
 }

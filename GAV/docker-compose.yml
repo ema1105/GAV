@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  gav-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gav-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/gav
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    networks:
+      - gav-network
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: always
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - gav-network
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - gav-network
+
+networks:
+  gav-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  redis-data:

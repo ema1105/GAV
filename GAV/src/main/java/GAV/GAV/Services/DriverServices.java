@@ -3,6 +3,7 @@ package GAV.GAV.Services;
 import GAV.GAV.Collections.Locations;
 import GAV.GAV.Collections.Travels;
 import GAV.GAV.Collections.Users;
+import GAV.GAV.DTO.DriverProfileDTO;
 import GAV.GAV.DTO.TravelDriverResponse;
 import GAV.GAV.Repositories.LocationRepository;
 import GAV.GAV.Repositories.TravelsRepository;
@@ -153,5 +154,41 @@ public class DriverServices {
                     duracion
             );
         }).toList();
+    }
+    // --------------------- PERFIL DEL CONDUCTOR ---------------------
+
+    public DriverProfileDTO getProfile(String username) {
+        Users driver = usersRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Conductor no encontrado"));
+
+        return new DriverProfileDTO(
+                driver.getFullname(),
+                driver.getLastname(),
+                driver.getEmail(),
+                driver.getNumber(),
+                driver.getProfilePictureUrl()
+        );
+    }
+
+    public Users updateProfile(String username, DriverProfileDTO dto) {
+        Users driver = usersRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Conductor no encontrado"));
+
+        if (dto.getFullname() != null && !dto.getFullname().isEmpty())
+            driver.setFullname(dto.getFullname());
+
+        if (dto.getLastname() != null && !dto.getLastname().isEmpty())
+            driver.setLastname(dto.getLastname());
+
+        if (dto.getEmail() != null && !dto.getEmail().isEmpty())
+            driver.setEmail(dto.getEmail());
+
+        if (dto.getNumber() != null && !dto.getNumber().isEmpty())
+            driver.setNumber(dto.getNumber());
+
+        if (dto.getProfilePictureUrl() != null && !dto.getProfilePictureUrl().isEmpty())
+            driver.setProfilePictureUrl(dto.getProfilePictureUrl());
+
+        return usersRepository.save(driver);
     }
 }

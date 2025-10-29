@@ -3,7 +3,6 @@ package GAV.GAV.Services;
 import org.springframework.stereotype.Service;
 
 import GAV.GAV.Collections.Cars;
-import GAV.GAV.Collections.Locations;
 import GAV.GAV.Collections.Travels;
 import GAV.GAV.Collections.Users;
 import GAV.GAV.DTO.DriverAvaibleDTO;

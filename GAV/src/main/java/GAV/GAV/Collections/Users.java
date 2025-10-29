@@ -22,6 +22,7 @@ public class Users {
     private String Username;
     private String password;
     private String email;
+    private String profilePictureUrl;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date birthday;
@@ -69,13 +70,15 @@ public class Users {
     public Users(String id, String fullname, String lastname, String username, String password, String email,
                  Date birthday, String documentNumber, DocumentType documentType,
                  String number, Roles rol, Sex sex, int age, Boolean availability,
-                 String license, LicenseType licenseType, String idCars) {
+                 String license, LicenseType licenseType, String idCars,
+                 String profilePictureUrl) {
         this.id = id;
         this.fullname = fullname;
         this.lastname = lastname;
         Username = username;
         this.password = password;
         this.email = email;
+        this.profilePictureUrl = profilePictureUrl;
         this.birthday = birthday;
         this.documentNumber = documentNumber;
         this.documentType = documentType;
@@ -223,6 +226,14 @@ public class Users {
 
     public void setIdCars(String idCars) {
         IdCars = idCars;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 
     @Override

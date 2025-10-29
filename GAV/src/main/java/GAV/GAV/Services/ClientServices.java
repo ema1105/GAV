@@ -2,6 +2,7 @@ package GAV.GAV.Services;
 import GAV.GAV.Collections.Locations;
 import GAV.GAV.Collections.Travels;
 import GAV.GAV.Collections.Users;
+import GAV.GAV.DTO.ClientProfileDTO;
 import GAV.GAV.DTO.TravelClientResponse;
 import GAV.GAV.DTO.TravelRequestDTO;
 import GAV.GAV.Repositories.LocationRepository;
@@ -12,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal; import java.math.RoundingMode;
 import java.util.Date; import java.util.List; import java.util.Optional;
+
 public class ClientServices {
     @Autowired
     private UsersRepository usersRepository;
@@ -258,6 +260,43 @@ public class ClientServices {
         }
         return user;
     }
+    // --------------------- PERFIL DEL CLIENTE ---------------------
+
+    public ClientProfileDTO getProfile(String username) {
+        Users client = usersRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+
+        return new ClientProfileDTO(
+                client.getFullname(),
+                client.getLastname(),
+                client.getEmail(),
+                client.getNumber(),
+                client.getProfilePictureUrl()
+        );
+    }
+
+    public Users updateProfile(String username, ClientProfileDTO dto) {
+        Users client = usersRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+
+        if (dto.getFullname() != null && !dto.getFullname().isEmpty())
+            client.setFullname(dto.getFullname());
+
+        if (dto.getLastname() != null && !dto.getLastname().isEmpty())
+            client.setLastname(dto.getLastname());
+
+        if (dto.getEmail() != null && !dto.getEmail().isEmpty())
+            client.setEmail(dto.getEmail());
+
+        if (dto.getNumber() != null && !dto.getNumber().isEmpty())
+            client.setNumber(dto.getNumber());
+
+        if (dto.getProfilePictureUrl() != null && !dto.getProfilePictureUrl().isEmpty())
+            client.setProfilePictureUrl(dto.getProfilePictureUrl());
+
+        return usersRepository.save(client);
+    }
+
 }
 
 

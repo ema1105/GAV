@@ -42,9 +42,8 @@ public class LoginController {
         }
     }
 
-    /**
-     * 🔹 Registro de cliente
-     */
+    //Registro de cliente
+
     @PostMapping("/register")
     public ResponseEntity<?> registerClient(@RequestBody Users client) {
         try {
