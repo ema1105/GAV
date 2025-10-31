@@ -24,7 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con username: " + username));
 
         // Convertir el rol de tu entidad Users a un GrantedAuthority que Spring Security reconozca
-        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRol().name());
+        GrantedAuthority authority = new SimpleGrantedAuthority(user.getRol().name());
 
         // Retornar el usuario compatible con Spring Security
         return new User(

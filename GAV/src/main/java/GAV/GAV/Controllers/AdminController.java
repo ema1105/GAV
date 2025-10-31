@@ -2,7 +2,6 @@ package GAV.GAV.Controllers;
 
 import GAV.GAV.Collections.Cars;
 import GAV.GAV.Collections.Locations;
-import GAV.GAV.Collections.Travels;
 import GAV.GAV.Collections.Users;
 import GAV.GAV.DTO.DriverAvaibleDTO;
 import GAV.GAV.DTO.PendingRequestDTO;
@@ -19,7 +18,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "*") // permite acceso desde Flutter
+//@CrossOrigin(origins = "*") // permite acceso desde Flutter
 public class AdminController {
 
     @Autowired
@@ -28,8 +27,9 @@ public class AdminController {
     // -------------------- VEHÍCULOS --------------------
 
     @GetMapping("/cars")
-    public ResponseEntity<List<Cars>> getAllCars() {
-        return ResponseEntity.ok(adminService.getAllCars());
+    public List<Cars> getAllCars() {
+        return adminService.getAllCars();
+
     }
 
     @PostMapping("/cars")

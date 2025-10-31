@@ -12,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/driver")
-@CrossOrigin(origins = "*") // Permite acceso desde Flutter u otro frontend
+//@CrossOrigin(origins = "*") // Permite acceso desde Flutter u otro frontend
 public class DriverController {
 
     @Autowired

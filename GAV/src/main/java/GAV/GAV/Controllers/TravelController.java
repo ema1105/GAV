@@ -3,9 +3,12 @@ package GAV.GAV.Controllers;
 import GAV.GAV.Collections.Travels;
 import GAV.GAV.Services.TravelServices;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
+
+@RestController
+@RequestMapping("/api/travels")
+@CrossOrigin(origins = "*")
 public class TravelController {
 
     @Autowired

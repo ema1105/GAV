@@ -4,13 +4,13 @@ import GAV.GAV.DTO.DriverProfileDTO;
 import GAV.GAV.Services.DriverServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.Map;
 
+@RestController
+@RequestMapping("/driver/profile")
 public class DriverProfileController {
     @Autowired
     private DriverServices driverService;

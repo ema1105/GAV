@@ -23,7 +23,7 @@ public class ClientController {
     @Autowired
     private ClientServices clientService;
 
-    // 🔹 Registrar un nuevo cliente
+    // Registrar un nuevo cliente
     @PostMapping("/register")
     public ResponseEntity<?> registerClient(@RequestBody Users client) {
         try {
@@ -68,7 +68,7 @@ public class ClientController {
         }
     }
 
-    // 🔹 Obtener viajes activos del cliente
+    // Obtener viajes activos del cliente
     @GetMapping("/travels/active")
     public ResponseEntity<?> getActiveTravels(Principal principal) {
         try {

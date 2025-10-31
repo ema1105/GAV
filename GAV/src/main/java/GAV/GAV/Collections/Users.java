@@ -19,7 +19,7 @@ public class Users {
     private String lastname;
 
     @Indexed(unique = true)
-    private String Username;
+    private String username;
     private String password;
     private String email;
     private String profilePictureUrl;
@@ -75,7 +75,7 @@ public class Users {
         this.id = id;
         this.fullname = fullname;
         this.lastname = lastname;
-        Username = username;
+        this.username = username;
         this.password = password;
         this.email = email;
         this.profilePictureUrl = profilePictureUrl;
@@ -117,11 +117,11 @@ public class Users {
     }
 
     public String getUsername() {
-        return Username;
+        return username;
     }
 
     public void setUsername(String username) {
-        Username = username;
+        this.username = username;
     }
 
     public String getPassword() {
@@ -256,7 +256,7 @@ public class Users {
                 "id='" + id + '\'' +
                 ", fullname='" + fullname + '\'' +
                 ", lastname='" + lastname + '\'' +
-                ", Username='" + Username + '\'' +
+                ", Username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", email='" + email + '\'' +
                 ", birthday=" + birthday +
