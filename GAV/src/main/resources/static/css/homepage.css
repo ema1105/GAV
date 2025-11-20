@@ -1,0 +1,255 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f9f6f1;
+    margin: 0;
+    padding: 0;
+    color: #222;
+}
+
+/* ===== Header ===== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 60px;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.logo h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #000;
+}
+
+.nav-links a {
+    margin-left: 15px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline {
+    border: 1.5px solid #000;
+    color: #000;
+    padding: 8px 16px;
+    border-radius: 6px;
+}
+
+.btn-outline:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+.btn-filled {
+    background-color: #000;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+}
+
+.btn-filled:hover {
+    background-color: #222;
+}
+
+/* ===== Hero Section ===== */
+.hero {
+    background-image: url('/img/castillo.jpg');
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    text-align: center;
+    padding: 120px 20px;
+    position: relative;
+}
+
+.hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.45);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero h2 {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.hero p {
+    font-size: 16px;
+    margin-bottom: 25px;
+}
+
+.btn-main {
+    background-color: #c7b58f;
+    color: #000;
+    padding: 12px 25px;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-main:hover {
+    background-color: #b39e76;
+}
+
+/* ===== Info Section ===== */
+.info {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.info h3 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: #000;
+}
+
+.info p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #444;
+}
+
+/* ===== Footer ===== */
+footer {
+    background-color: #000;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+}
+
+/* ===== Responsivo ===== */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px 25px;
+    }
+
+    .hero {
+        padding: 90px 15px;
+    }
+
+    .hero h2 {
+        font-size: 24px;
+    }
+
+    .hero p {
+        font-size: 14px;
+    }
+
+    .info {
+        padding: 40px 15px;
+    }
+}
+/* ===== Sitios Turísticos ===== */
+.turismo {
+    text-align: center;
+    padding: 70px 20px;
+    background-color: #f5f3ee;
+}
+
+.turismo h3 {
+    font-size: 26px;
+    margin-bottom: 10px;
+    color: #000;
+}
+
+.turismo-subtitle {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 40px;
+}
+
+.turismo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.turismo-card {
+    background-color: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.turismo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.turismo-card img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+.turismo-info {
+    padding: 18px;
+    text-align: left;
+}
+
+.turismo-info h4 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #000;
+}
+
+.turismo-info p {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.5;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .turismo-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .turismo-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .turismo-card img {
+        height: 200px;
+    }
+}

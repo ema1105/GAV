@@ -5,19 +5,19 @@ public class ClientProfileDTO {
     private String lastname;
     private String email;
     private String number;
-    private String profilePictureUrl;  // URL o base64
-    private String address;
+    private String password;
 
     public ClientProfileDTO() {
     }
 
     public ClientProfileDTO(String fullname, String lastname, String email,
-                            String number, String profilePictureUrl) {
+                            String number, String password) {
         this.fullname = fullname;
         this.lastname = lastname;
         this.email = email;
         this.number = number;
-        this.profilePictureUrl = profilePictureUrl;
+        this.password = password;
+
     }
 
     public String getFullname() {
@@ -52,12 +52,11 @@ public class ClientProfileDTO {
         this.number = number;
     }
 
-    public String getProfilePictureUrl() {
-        return profilePictureUrl;
+    public String getPassword() {
+        return password;
     }
 
-    public void setProfilePictureUrl(String profilePictureUrl) {
-        this.profilePictureUrl = profilePictureUrl;
+    public void setPassword(String password) {
+        this.password = password;
     }
-
 }

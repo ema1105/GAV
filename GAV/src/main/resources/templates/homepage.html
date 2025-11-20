@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio - GAV</title>
+    <link rel="stylesheet" th:href="@{/css/homepage.css}">
+</head>
+<body>
+
+<!-- Encabezado -->
+<header class="header">
+    <div class="logo">
+        <img th:src="@{/img/gav.jpg}" alt="Logo">
+        <h1>Manzanillo del Mar</h1>
+    </div>
+
+    <nav class="nav-links">
+        <a th:href="@{/login}" class="btn-outline">Iniciar Sesión</a>
+        <a th:href="@{/register}" class="btn-filled">Registrarse</a>
+    </nav>
+</header>
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h2>Su viaje sofisticado a Cartagena comienza aquí</h2>
+        <p>Gestión de viajes terrestres personalizados para nuestros huéspedes.</p>
+        <a th:href="@{/register}" class="btn-main">Planifica tu experiencia ahora</a>
+    </div>
+</section>
+
+<!-- Información general -->
+<section class="info">
+    <h3>Sobre el Hotel Estelar de Manzanillo</h3>
+    <p>
+        Disfruta de una experiencia única en Cartagena, con rutas optimizadas,
+        atención exclusiva y viajes diseñados a la medida de cada huésped.
+        Nos especializamos en ofrecer confort, seguridad y elegancia en cada recorrido.
+    </p>
+</section>
+
+<!-- Footer -->
+<footer>
+    <p>© 2025 Hotel Estelar Manzanillo del Mar. Todos los derechos reservados.</p>
+</footer>
+
+</body>
+</html>

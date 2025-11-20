@@ -9,12 +9,15 @@ import GAV.GAV.Repositories.LocationRepository;
 import GAV.GAV.Repositories.TravelsRepository;
 import GAV.GAV.Repositories.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
 @Service
 public class DriverServices {
     @Autowired
@@ -156,6 +159,72 @@ public class DriverServices {
             );
         }).toList();
     }
+    //OBTENER SOLICITUDES EN ESTADO REQUESTED
+    public List<TravelDriverResponse> getTravelRequests(String driverId) {
+        List<Travels.TravelStatus> estados = List.of(Travels.TravelStatus.REQUESTED);
+
+        List<Travels> travels = travelsRepository.findByIdDriverAndTravelStatusIn(driverId, estados);
+
+        return travels.stream().map(viaje -> {
+            String destinoNombre = locationRepository.findById(viaje.getIdLocation())
+                    .map(Locations::getDestination)
+                    .orElse("Desconocido");
+
+            // Buscar cliente asociado
+            Users client = usersRepository.findById(viaje.getIdClient()).orElse(null);
+            TravelDriverResponse.ClientInfo clientInfo = null;
+            if (client != null) {
+                clientInfo = new TravelDriverResponse.ClientInfo(
+                        client.getFullname() + " " + client.getLastname(),
+                        client.getNumber()
+                );
+            }
+
+            return new TravelDriverResponse(
+                    viaje.getId(),
+                    viaje.getNumberPassengers(),
+                    viaje.getTravelStatus().name(),
+                    viaje.getRequestDate(),
+                    viaje.getStartDate(),
+                    viaje.getEndDate(),
+                    viaje.getCancellationDate(),
+                    destinoNombre,
+                    clientInfo,
+                    viaje.getFinalPrice(),
+                    null
+            );
+        }).toList();
+    }
+    //ACEPTAR SOLICITUDES EN ESTADO REQUESTED->ACCEPTED
+    public void acceptTravel(String travelId) {
+        Travels travel = travelsRepository.findById(travelId)
+                .orElseThrow(() -> new RuntimeException("Viaje no encontrado"));
+
+        // Validar que el viaje esté en estado REQUESTED
+        if (travel.getTravelStatus() != Travels.TravelStatus.REQUESTED) {
+            throw new RuntimeException("Solo se pueden aceptar viajes en estado SOLICITADO");
+        }
+
+        travel.setTravelStatus(Travels.TravelStatus.ACCEPTED);
+        travelsRepository.save(travel);
+    }
+
+    /*Rechazar un viaje REQUESTED->REJECTED*/
+    public void rejectTravel(String travelId) {
+        Travels travel = travelsRepository.findById(travelId)
+                .orElseThrow(() -> new RuntimeException("Viaje no encontrado"));
+
+        // Validar que el viaje esté en estado REQUESTED
+        if (travel.getTravelStatus() != Travels.TravelStatus.REQUESTED) {
+            throw new RuntimeException("Solo se pueden rechazar viajes en estado SOLICITADO");
+        }
+
+        travel.setTravelStatus(Travels.TravelStatus.REJECTED);
+        // Opcional: liberar conductor para que pueda ser reasignado
+        travel.setIdDriver(null);
+        travelsRepository.save(travel);
+    }
+
     // --------------------- PERFIL DEL CONDUCTOR ---------------------
 
     public DriverProfileDTO getProfile(String username) {
@@ -167,7 +236,7 @@ public class DriverServices {
                 driver.getLastname(),
                 driver.getEmail(),
                 driver.getNumber(),
-                driver.getProfilePictureUrl()
+                driver.getUsername()
         );
     }
 
@@ -187,9 +256,73 @@ public class DriverServices {
         if (dto.getNumber() != null && !dto.getNumber().isEmpty())
             driver.setNumber(dto.getNumber());
 
-        if (dto.getProfilePictureUrl() != null && !dto.getProfilePictureUrl().isEmpty())
-            driver.setProfilePictureUrl(dto.getProfilePictureUrl());
-
         return usersRepository.save(driver);
     }
+
+    //vaijes paginados
+    public Page<TravelDriverResponse> getDriverTravelHistory(String driverId, int page, int size, String search) {
+        List<Travels.TravelStatus> finalizados = List.of(
+                Travels.TravelStatus.FINISHED,
+                Travels.TravelStatus.CANCELLED,
+                Travels.TravelStatus.REJECTED
+        );
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Travels> travelsPage;
+
+        if (search != null && !search.trim().isEmpty()) {
+            // Búsqueda por nombre de cliente o destino
+            travelsPage = travelsRepository.findByIdDriverAndTravelStatusInAndSearch(
+                    driverId, finalizados, search.toLowerCase(), pageable);
+        } else {
+            travelsPage = travelsRepository.findByIdDriverAndTravelStatusIn(driverId, finalizados, pageable);
+        }
+
+        return travelsPage.map(viaje -> {
+            String destinoNombre = locationRepository.findById(viaje.getIdLocation())
+                    .map(Locations::getDestination)
+                    .orElse("Desconocido");
+
+            TravelDriverResponse.ClientInfo clientInfo = null;
+            if (viaje.getIdClient() != null) {
+                Users client = usersRepository.findById(viaje.getIdClient()).orElse(null);
+                if (client != null) {
+                    clientInfo = new TravelDriverResponse.ClientInfo(
+                            client.getFullname() + " " + client.getLastname(),
+                            client.getNumber()
+                    );
+                }
+            }
+            String duracion = null;
+            if (viaje.getStartDate() != null && viaje.getEndDate() != null) {
+                long minutos = Duration.between(
+                        viaje.getStartDate().toInstant(),
+                        viaje.getEndDate().toInstant()
+                ).toMinutes();
+
+                long horas = minutos / 60;
+                long minsRestantes = minutos % 60;
+
+                duracion = String.format("%02d:%02d", horas, minsRestantes);
+            }
+
+            // === RETORNAR DTO ===
+            return new TravelDriverResponse(
+                    viaje.getId(),
+                    viaje.getNumberPassengers(),
+                    viaje.getTravelStatus().name(),
+                    viaje.getRequestDate(),
+                    viaje.getStartDate(),
+                    viaje.getEndDate(),
+                    viaje.getCancellationDate(),
+                    destinoNombre,
+                    clientInfo,
+                    viaje.getFinalPrice(),
+                    duracion
+            );
+
+
+        });
+    }
+
 }

@@ -5,19 +5,20 @@ public class DriverProfileDTO {
     private String lastname;
     private String email;
     private String number;
-    private String profilePictureUrl;
+    private String username;
 
 
     public DriverProfileDTO() {
     }
 
     public DriverProfileDTO(String fullname, String lastname, String email,
-                            String number, String profilePictureUrl) {
+                            String number, String username) {
         this.fullname = fullname;
         this.lastname = lastname;
         this.email = email;
         this.number = number;
-        this.profilePictureUrl = profilePictureUrl;
+
+        this.username = username;
     }
 
     public String getFullname() {
@@ -52,11 +53,13 @@ public class DriverProfileDTO {
         this.number = number;
     }
 
-    public String getProfilePictureUrl() {
-        return profilePictureUrl;
+
+
+    public String getUsername() {
+        return username;
     }
 
-    public void setProfilePictureUrl(String profilePictureUrl) {
-        this.profilePictureUrl = profilePictureUrl;
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

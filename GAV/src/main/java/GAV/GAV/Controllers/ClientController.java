@@ -1,8 +1,11 @@
 package GAV.GAV.Controllers;
 
 import GAV.GAV.Collections.Locations;
+import GAV.GAV.Collections.Rating;
 import GAV.GAV.Collections.Travels;
 import GAV.GAV.Collections.Users;
+import GAV.GAV.DTO.ClientProfileDTO;
+import GAV.GAV.DTO.RatingRequestDTO;
 import GAV.GAV.DTO.TravelClientResponse;
 import GAV.GAV.DTO.TravelRequestDTO;
 
@@ -11,19 +14,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/client")
-@CrossOrigin(origins = "*") // Permite consumo desde Flutter
 public class ClientController {
 
     @Autowired
     private ClientServices clientService;
 
-    // Registrar un nuevo cliente
+    //-----------------REGISTRAR NUEVO CLIENTE-----------------//
     @PostMapping("/register")
     public ResponseEntity<?> registerClient(@RequestBody Users client) {
         try {
@@ -47,13 +50,13 @@ public class ClientController {
         }
     }
 
-    // 🔹 Obtener lista de destinos disponibles
+    // Obtener lista de destinos disponibles
     @GetMapping("/destinations")
     public ResponseEntity<List<Locations>> getAvailableDestinations() {
         return ResponseEntity.ok(clientService.getAvailableDestinations());
     }
-
-    // 🔹 Solicitar un nuevo viaje
+    //----------------VIAJE------------------//
+    // Solicitar un nuevo viaje
     @PostMapping("/travels/request")
     public ResponseEntity<?> requestTravel(@RequestBody TravelRequestDTO request, Principal principal) {
         try {
@@ -68,7 +71,7 @@ public class ClientController {
         }
     }
 
-    // Obtener viajes activos del cliente
+    // Obtener viajes activos
     @GetMapping("/travels/active")
     public ResponseEntity<?> getActiveTravels(Principal principal) {
         try {
@@ -83,7 +86,7 @@ public class ClientController {
         }
     }
 
-    // 🔹 Obtener historial de viajes (finalizados o cancelados)
+    //Obtener historial de viajes (finalizados o cancelados)
     @GetMapping("/travels/history")
     public ResponseEntity<?> getTravelHistory(Principal principal) {
         try {
@@ -98,7 +101,7 @@ public class ClientController {
         }
     }
 
-    // 🔹 Cancelar viaje activo
+    // Cancelar viaje activo
     @PutMapping("/travels/{id}/cancel")
     public ResponseEntity<?> cancelTravel(@PathVariable String id, Principal principal) {
         try {
@@ -109,4 +112,54 @@ public class ClientController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    //------------ACTUALIZACION DE DATOS DE PERFIL----------------------
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Principal principal) {
+        try {
+            String username = principal.getName();
+            ClientProfileDTO profile = clientService.getProfile(username);
+            return ResponseEntity.ok(profile);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Actualizar perfil del cliente
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody ClientProfileDTO dto, Principal principal) {
+        try {
+            String username = principal.getName();
+            clientService.updateProfile(username, dto);
+            return ResponseEntity.ok(Map.of("message", "Perfil actualizado correctamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    //-------------CALIFICACION--------------//
+
+   //calificar viaje(cliente->conductor)
+    @PostMapping("/travels/rate")
+    public ResponseEntity<?> rateTravel(@RequestBody RatingRequestDTO ratingDTO, Principal principal) {
+        try {
+            String username = principal.getName();
+            clientService.rateTravel(ratingDTO, username);
+            return ResponseEntity.ok(Map.of("message", "Conductor calificado correctamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    //obtener calificacion
+    @GetMapping("/travels/{travelId}/rating")
+    public ResponseEntity<?> getTravelRating(@PathVariable String travelId, Principal principal) {
+        try {
+            String username = principal.getName();
+            Rating rating = clientService.getTravelRating(travelId, username);
+            return ResponseEntity.ok(rating);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
 }

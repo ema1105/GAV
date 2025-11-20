@@ -2,38 +2,62 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Iniciar Sesión</title>
+    <title>Iniciar Sesión - Manzanillo del Mar</title>
     <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<div class="container">
-    <!-- Imagen decorativa -->
-    <div class="image-container">
+<div class="login-container">
+    <!-- Panel izquierdo con imagen -->
+    <div class="login-image">
+        <div class="image-overlay">
+            <h1>Manzanillo del Mar</h1>
 
-        <img th:src="@{/img/gav.png}" alt="Login" style="max-width: 100%;"/>
+        </div>
+        <img th:src="@{/img/gav.jpg}" alt="Login" class="background-image"/>
     </div>
 
-    <h2>Iniciar Sesión</h2>
-    <form th:action="@{/login}" method="post">
-        <div class="input-container">
-            <input type="text" id="username" name="username" required />
-            <label for="username" class="label">Usuario</label>
-            <div class="underline"></div>
+    <!-- Panel derecho con formulario -->
+    <div class="login-form">
+        <div class="form-container">
+            <div class="form-header">
+                <h2>Iniciar Sesión</h2>
+                <p>Accede a tu cuenta</p>
+            </div>
+
+            <form th:action="@{/login}" method="post" class="form">
+                <div class="input-container">
+                    <input type="text" id="username" name="username"
+                           autocomplete="username" required />
+                    <label for="username" class="label">
+                        <span class="icon">👤</span>
+                        Usuario
+                    </label>
+                    <div class="underline"></div>
+                </div>
+
+                <div class="input-container">
+                    <input type="password" id="password" name="password"
+                           autocomplete="current-password" required />
+                    <label for="password" class="label">
+                        <span class="icon">🔒</span>
+                        Contraseña
+                    </label>
+                    <div class="underline"></div>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <span class="btn-text">Ingresar</span>
+                    <span class="btn-icon">→</span>
+                </button>
+            </form>
+
+            <div class="register-link">
+                <p>¿No tienes cuenta? <a th:href="@{/register}">Regístrate aquí</a></p>
+            </div>
         </div>
-
-        <div class="input-container">
-            <input type="password" id="password" name="password" required />
-            <label for="password" class="label">Contraseña</label>
-            <div class="underline"></div>
-        </div>
-
-        <button type="submit">Ingresar</button>
-    </form>
-
-
-    <br>
-    <p>¿No tienes cuenta? <a th:href="@{/register}">Regístrate aquí</a></p>
+    </div>
 </div>
 
 </body>

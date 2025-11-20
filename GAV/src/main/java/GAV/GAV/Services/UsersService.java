@@ -2,7 +2,7 @@ package GAV.GAV.Services;
 import GAV.GAV.Collections.Users;
 import GAV.GAV.Repositories.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -148,14 +148,14 @@ public class UsersService {
         admin.setFullname("Administrador");
         admin.setLastname("GAV");
         admin.setEmail(defaultAdminEmail);
-        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setPassword(passwordEncoder.encode("admin1234"));
         admin.setRol(Users.Roles.ADMINISTRATOR);
         admin.setNumber("0000000000");
         admin.setDocumentNumber("00000000");
         admin.setAvailability(false);
 
         usersRepository.save(admin);
-        System.out.println("Usuario administrador creado automáticamente: " + defaultAdminEmail + " / admin123");
+        System.out.println("Usuario administrador creado automáticamente: " + defaultAdminEmail + " / admin1234");
     }
 
 }

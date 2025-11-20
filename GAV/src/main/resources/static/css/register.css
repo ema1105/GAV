@@ -1,0 +1,406 @@
+:root {
+    --beige-light: #f5f1e8;
+    --beige-medium: #e8dfd0;
+    --beige-dark: #d6ccb8;
+    --beige-darker: #c4b7a1;
+    --black: #1a1a1a;
+    --black-medium: #2d2d2d;
+    --black-light: #404040;
+    --white: #ffffff;
+    --accent: #8b7355;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, var(--beige-light) 0%, var(--beige-medium) 100%);
+    color: var(--black);
+    line-height: 1.6;
+    font-weight: 400;
+}
+
+/* ==== Contenedor principal ==== */
+.register-container {
+    display: flex;
+    width: 1000px;
+    height: 700px;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+/* ==== Panel de imagen ==== */
+.register-image {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.8);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.7) 0%, rgba(43, 43, 43, 0.4) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    text-align: center;
+    padding: 40px;
+}
+
+.image-overlay h1 {
+    font-size: 2.2em;
+    font-weight: 600;
+    margin-bottom: 15px;
+    letter-spacing: -0.5px;
+}
+
+.image-overlay p {
+    font-size: 1.1em;
+    font-weight: 300;
+    opacity: 0.9;
+}
+
+/* ==== Panel del formulario ==== */
+.register-form {
+    flex: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background: var(--white);
+    overflow-y: auto;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 500px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.logo-container {
+    margin-bottom: 20px;
+}
+
+.logo {
+    width: 80px;
+    height: auto;
+    opacity: 0.9;
+}
+
+.form-header h2 {
+    font-size: 1.8em;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.form-header p {
+    color: var(--black-light);
+    font-size: 0.95em;
+    font-weight: 400;
+}
+
+/* ==== Grid del formulario ==== */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    width: 100%;
+}
+
+/* ==== Inputs ==== */
+.input-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.input-container input,
+.input-container select {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid var(--beige-medium);
+    padding: 12px 0 12px 35px;
+    font-size: 14px;
+    background: transparent;
+    outline: none;
+    color: var(--black);
+    font-weight: 400;
+    transition: all 0.3s ease;
+    appearance: none;
+}
+
+.input-container select {
+    cursor: pointer;
+}
+
+.input-container input:focus,
+.input-container select:focus {
+    border-bottom-color: var(--black);
+}
+
+/* Etiquetas flotantes */
+.input-container .label {
+    position: absolute;
+    top: 12px;
+    left: 35px;
+    color: var(--black-light);
+    pointer-events: none;
+    transition: all 0.3s ease;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.input-container .label .icon {
+    font-size: 1em;
+    opacity: 0.7;
+}
+
+.input-container input:focus ~ .label,
+.input-container input:valid ~ .label,
+.input-container select:focus ~ .label,
+.input-container select:valid ~ .label {
+    top: -18px;
+    font-size: 11px;
+    color: var(--black);
+    left: 0;
+}
+
+.input-container input:focus ~ .label .icon,
+.input-container input:valid ~ .label .icon,
+.input-container select:focus ~ .label .icon,
+.input-container select:valid ~ .label .icon {
+    opacity: 0.8;
+}
+
+/* Línea animada */
+.input-container .underline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 0;
+    background: linear-gradient(90deg, var(--black) 0%, var(--beige-dark) 100%);
+    transition: width 0.3s ease;
+}
+
+.input-container input:focus ~ .underline,
+.input-container select:focus ~ .underline {
+    width: 100%;
+}
+
+/* Estilo especial para selects */
+.select-container::after {
+    content: '▼';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--black-light);
+    font-size: 10px;
+    pointer-events: none;
+}
+
+/* ==== Botón ==== */
+.register-btn {
+    width: 100%;
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.register-btn:hover {
+    background: var(--black-medium);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-text {
+    font-weight: 500;
+}
+
+.btn-icon {
+    font-size: 1.1em;
+    transition: transform 0.3s ease;
+}
+
+.register-btn:hover .btn-icon {
+    transform: translateX(3px);
+}
+
+/* ==== Enlace de login ==== */
+.login-link {
+    text-align: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--beige-medium);
+}
+
+.login-link p {
+    color: var(--black-light);
+    font-size: 14px;
+}
+
+.login-link a {
+    color: var(--black);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+.login-link a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--black);
+    transition: width 0.3s ease;
+}
+
+.login-link a:hover {
+    color: var(--black-medium);
+}
+
+.login-link a:hover::after {
+    width: 100%;
+}
+
+/* ==== Animaciones ==== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==== Scrollbar personalizado ==== */
+.register-form::-webkit-scrollbar {
+    width: 6px;
+}
+
+.register-form::-webkit-scrollbar-track {
+    background: var(--beige-medium);
+}
+
+.register-form::-webkit-scrollbar-thumb {
+    background: var(--beige-darker);
+    border-radius: 3px;
+}
+
+.register-form::-webkit-scrollbar-thumb:hover {
+    background: var(--black-light);
+}
+
+/* ==== Responsive ==== */
+@media (max-width: 768px) {
+    .register-container {
+        flex-direction: column;
+        width: 95%;
+        height: auto;
+        max-width: 500px;
+        margin: 20px;
+    }
+
+    .register-image {
+        height: 200px;
+        flex: none;
+    }
+
+    .image-overlay {
+        padding: 20px;
+    }
+
+    .image-overlay h1 {
+        font-size: 1.8em;
+    }
+
+    .register-form {
+        padding: 30px 25px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .form-container {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .register-container {
+        width: 100%;
+        margin: 10px;
+    }
+
+    .register-form {
+        padding: 25px 20px;
+    }
+
+    .form-header h2 {
+        font-size: 1.6em;
+    }
+
+    .input-container input,
+    .input-container select {
+        padding: 12px 0 12px 30px;
+    }
+
+    .input-container .label {
+        left: 30px;
+    }
+}

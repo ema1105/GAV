@@ -45,7 +45,7 @@ public class Users {
     private String license;
     private LicenseType licenseType;
 
-    private String IdCars;
+    private String idCars;
 
     public enum DocumentType {
         CEDULA,
@@ -59,7 +59,7 @@ public class Users {
     public enum Roles {
         DRIVER,
         CLIENT,
-        ADMINISTRATOR,
+        ADMINISTRATOR
     }
     public enum Sex {
         MALE, FEMALE
@@ -89,7 +89,7 @@ public class Users {
         this.availability = availability;
         this.license = license;
         this.licenseType = licenseType;
-        IdCars = idCars;
+        this.idCars = idCars;
     }
 
     public String getId() {
@@ -221,11 +221,11 @@ public class Users {
     }
 
     public String getIdCars() {
-        return IdCars;
+        return idCars;
     }
 
     public void setIdCars(String idCars) {
-        IdCars = idCars;
+        this.idCars = idCars;
     }
 
     public String getProfilePictureUrl() {
@@ -269,7 +269,7 @@ public class Users {
                 ", availability=" + availability +
                 ", license='" + license + '\'' +
                 ", licenseType=" + licenseType +
-                ", IdCars='" + IdCars + '\'' +
+                ", IdCars='" + idCars + '\'' +
                 '}';
     }
 }

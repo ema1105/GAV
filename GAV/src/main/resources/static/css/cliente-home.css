@@ -1,0 +1,641 @@
+:root {
+    --beige-light: #f5f1e8;
+    --beige-medium: #e8dfd0;
+    --beige-dark: #d6ccb8;
+    --beige-darker: #c4b7a1;
+    --black: #1a1a1a;
+    --black-medium: #2d2d2d;
+    --black-light: #404040;
+    --white: #ffffff;
+    --accent: #8b7355;
+    --success: #2d5a2d;
+    --error: #c53030;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--beige-light) 0%, var(--beige-medium) 100%);
+    color: var(--black);
+    line-height: 1.6;
+    font-weight: 400;
+    overflow: hidden;
+}
+
+/* ===== Sidebar ===== */
+#sidebar {
+    width: 280px;
+    background: var(--black);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 1000;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-content {
+    flex-grow: 1;
+}
+
+.sidebar-header {
+    padding: 35px 25px 25px;
+    border-bottom: 2px solid var(--beige-darker);
+    background: var(--black-medium);
+}
+
+.sidebar-header h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: var(--beige-light);
+    margin: 0;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-menu {
+    padding: 25px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 25px;
+    color: var(--beige-light);
+    text-decoration: none;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--beige-darker), transparent);
+    transition: width 0.3s ease;
+    opacity: 0.1;
+}
+
+.menu-item:hover::before {
+    width: 100%;
+}
+
+.menu-item:hover {
+    background-color: var(--black-medium);
+    color: var(--white);
+    border-left-color: var(--beige-dark);
+}
+
+.menu-item.active {
+    background: linear-gradient(90deg, var(--black-medium) 0%, var(--black) 100%);
+    color: var(--white);
+    border-left-color: var(--beige-light);
+    font-weight: 500;
+    box-shadow: inset 0 0 20px rgba(214, 204, 184, 0.1);
+}
+
+.menu-item .icon {
+    margin-right: 15px;
+    font-size: 1.2em;
+    filter: brightness(0.9);
+}
+
+.menu-item .text {
+    flex-grow: 1;
+    font-weight: 400;
+}
+
+.logout-item {
+    border-top: 2px solid var(--beige-darker);
+    background: var(--black-medium);
+}
+
+.logout-item .menu-item {
+    color: var(--beige-dark);
+}
+
+.logout-item .menu-item:hover {
+    color: var(--white);
+}
+
+/* ===== Botón Burger ===== */
+.menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    position: absolute;
+    top: 25px;
+    right: -50px;
+    z-index: 1001;
+    padding: 10px;
+    background: var(--black);
+    border-radius: 0 8px 8px 0;
+}
+
+.menu-toggle span {
+    width: 25px;
+    height: 3px;
+    background-color: var(--beige-light);
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.menu-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* ===== Contenido principal ===== */
+.content {
+    flex: 1;
+    margin-left: 280px;
+    padding: 45px;
+    overflow-y: auto;
+    background: var(--beige-light);
+    position: relative;
+    transition: margin-left 0.3s ease;
+}
+
+.content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--black) 0%, var(--beige-dark) 100%);
+}
+
+.content-header {
+    margin-bottom: 35px;
+    padding-bottom: 25px;
+    border-bottom: 2px solid var(--beige-dark);
+}
+
+.content-header h2 {
+    font-size: 2.2em;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+}
+
+.content-header p {
+    color: var(--black-light);
+    font-size: 1.05em;
+    font-weight: 400;
+}
+
+/* ===== Secciones ===== */
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ===== Cards ===== */
+.card {
+    background: var(--white);
+    border: 1px solid var(--beige-medium);
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+}
+
+.card h3 {
+    color: var(--black);
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 1.3em;
+}
+
+/* ===== Formularios ===== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--black);
+    font-weight: 500;
+}
+
+.form-input, .form-group input, .form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--beige-medium);
+    border-radius: 6px;
+    font-size: 1em;
+    transition: border-color 0.3s ease;
+    background: var(--white);
+    font-family: 'Inter', sans-serif;
+}
+
+.form-input:focus, .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--beige-dark);
+    box-shadow: 0 0 0 3px rgba(214, 204, 184, 0.2);
+}
+
+/* ===== Botones ===== */
+.btn {
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    padding: 14px 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1em;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn:hover {
+    background: var(--black-medium);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary {
+    background: var(--beige-dark);
+    color: var(--black);
+}
+
+.btn-secondary:hover {
+    background: var(--beige-darker);
+}
+
+/* ===== Travel Cards ===== */
+.travel-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid var(--beige-dark);
+    transition: transform 0.2s ease;
+}
+
+.travel-card:hover {
+    transform: translateY(-2px);
+}
+
+.travel-card.cancelled {
+    border-left-color: var(--error);
+    background: #fdf0f0;
+}
+
+.travel-card.finished {
+    border-left-color: var(--success);
+    background: #f0f9f0;
+}
+
+.travel-card h4 {
+    color: var(--black);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.travel-details {
+    margin-bottom: 15px;
+}
+
+.travel-details p {
+    margin: 6px 0;
+    color: var(--black-light);
+    font-size: 0.95em;
+}
+
+/* ===== Mapa ===== */
+.map-container {
+    width: 100%;
+    height: 400px;
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--beige-medium);
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+.location-info {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.location-info h4 {
+    color: var(--black);
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.location-info p {
+    margin: 8px 0;
+    color: var(--black-light);
+}
+
+/* ===== Mensajes ===== */
+.message {
+    padding: 15px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    margin: 15px 0;
+    border: 1px solid transparent;
+}
+
+.message.success {
+    background: #f0f9f0;
+    color: var(--success);
+    border-color: #c6e7c6;
+}
+
+.message.error {
+    background: #fdf0f0;
+    color: var(--error);
+    border-color: #feb2b2;
+}
+
+/* ===== Sistema de Calificación ===== */
+.rating-display {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--beige-medium);
+}
+
+.rating-display .stars {
+    color: #ffc107;
+    font-size: 18px;
+    margin: 5px 0;
+}
+
+.rating-interface {
+    margin-top: 15px;
+    padding: 20px;
+    background: var(--beige-light);
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+}
+
+.stars-rating {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.stars-rating .star {
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--beige-medium);
+    transition: color 0.2s ease;
+}
+
+.stars-rating .star.active,
+.stars-rating .star:hover {
+    color: #ffc107;
+}
+
+.rating-comment {
+    width: 100%;
+    margin: 12px 0;
+    padding: 12px;
+    border: 1px solid var(--beige-medium);
+    border-radius: 6px;
+    resize: vertical;
+    font-family: 'Inter', sans-serif;
+    background: var(--white);
+}
+
+.rating-comment:focus {
+    outline: none;
+    border-color: var(--beige-dark);
+}
+
+.btn-rating {
+    background: #ffc107;
+    color: var(--black);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-rating:hover {
+    background: #e0a800;
+    transform: translateY(-1px);
+}
+
+/* ===== Popups del Mapa ===== */
+.mapboxgl-popup-content {
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    font-family: 'Inter', sans-serif;
+    background: var(--white);
+}
+
+.mapboxgl-popup-content h3 {
+    margin: 0 0 10px 0;
+    color: var(--black);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mapboxgl-popup-content p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: var(--black-light);
+}
+
+.btn-map {
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+    width: 100%;
+    transition: background 0.3s ease;
+}
+
+.btn-map:hover {
+    background: var(--black-medium);
+}
+
+/* ===== Scrollbar personalizado ===== */
+.content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+    background: var(--beige-medium);
+}
+
+.content::-webkit-scrollbar-thumb {
+    background: var(--beige-darker);
+    border-radius: 4px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+    background: var(--black-light);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    #sidebar {
+        width: 100%;
+        height: auto;
+        position: fixed;
+        transform: translateX(-100%);
+        z-index: 1000;
+    }
+
+    #sidebar.active {
+        transform: translateX(0);
+    }
+
+    .sidebar-menu {
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 15px;
+    }
+
+    .menu-item {
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        padding: 12px 15px;
+        white-space: nowrap;
+        min-width: 120px;
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+    }
+
+    .menu-item.active {
+        border-left: none;
+        border-bottom-color: var(--beige-light);
+    }
+
+    .menu-item .icon {
+        margin-right: 0;
+        font-size: 1.3em;
+    }
+
+    .menu-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        right: auto;
+        background: var(--black);
+        z-index: 1001;
+    }
+
+    .content {
+        margin-left: 0;
+        padding: 80px 20px 20px;
+    }
+
+    .content-header h2 {
+        font-size: 1.8em;
+    }
+
+    .card {
+        padding: 20px;
+        margin: 15px 0;
+    }
+
+    .travel-card {
+        padding: 15px;
+        margin: 10px 0;
+    }
+
+    .map-container {
+        height: 300px;
+    }
+
+    .btn {
+        width: 100%;
+        margin: 8px 0;
+    }
+}
+
+@media (min-width: 769px) {
+    .menu-toggle {
+        display: none;
+    }
+}
+#map {
+    /* Optimizaciones de rendimiento */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000;
+    will-change: transform;
+    /* Asegurar dimensiones adecuadas */
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+}
+
+/* Mejorar rendimiento en móviles */
+@media (max-width: 768px) {
+    #map {
+        min-height: 300px;
+    }
+
+    /* Reducir calidad en móviles para mejor rendimiento */
+    .mapboxgl-canvas {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}

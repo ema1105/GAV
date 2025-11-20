@@ -13,13 +13,16 @@ public class TravelClientResponse {
     private ConductorInfo conductor;
     private BigDecimal precioFinal;
     private String duracionViaje;
+    private Integer rating;
+    private String comment;
 
     public TravelClientResponse() {}
 
-    public TravelClientResponse(String id, int cantidadPasajeros, String estadoViaje,
+    public TravelClientResponse(String id,int cantidadPasajeros, String estadoViaje,
                                 Date fechaSolicitud, Date fechaInicio, Date fechaFinalizacion,
                                 Date fechaCancelacion, String destinoNombre,
-                                ConductorInfo conductor, BigDecimal precioFinal, String duracionViaje) {
+                                ConductorInfo conductor, BigDecimal precioFinal, String duracionViaje,
+                                Integer rating, String comment) {
         this.id = id;
         this.cantidadPasajeros = cantidadPasajeros;
         this.estadoViaje = estadoViaje;
@@ -31,6 +34,8 @@ public class TravelClientResponse {
         this.conductor = conductor;
         this.precioFinal = precioFinal;
         this.duracionViaje = duracionViaje;
+        this.rating = rating;
+        this.comment = comment;
     }
 
     public static class ConductorInfo {
@@ -54,6 +59,9 @@ public class TravelClientResponse {
     // Getters y Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+
+
     public int getCantidadPasajeros() { return cantidadPasajeros; }
     public void setCantidadPasajeros(int cantidadPasajeros) { this.cantidadPasajeros = cantidadPasajeros; }
     public String getEstadoViaje() { return estadoViaje; }
@@ -74,4 +82,8 @@ public class TravelClientResponse {
     public void setPrecioFinal(BigDecimal precioFinal) { this.precioFinal = precioFinal; }
     public String getDuracionViaje() { return duracionViaje; }
     public void setDuracionViaje(String duracionViaje) { this.duracionViaje = duracionViaje; }
+    public Integer getRating() { return rating; }
+    public void setRating(Integer rating) { this.rating = rating; }
+    public String getComment() { return comment; }
+    public void setComment(String comment) { this.comment = comment; }
 }

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Administrador</title>
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<!-- Botón Hamburguesa -->
+<button id="menu-toggle" class="menu-toggle">☰</button>
+
+<!-- Overlay para móviles -->
+<div id="mobile-overlay" class="mobile-overlay"></div>
+
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h2>Panel de Control</h2>
+    </div>
+    <ul class="sidebar-menu">
+        <li><a href="#" id="btn-inicio" class="menu-item active">
+            <span class="icon">🏠</span>
+            <span class="text">Inicio</span>
+        </a></li>
+        <li><a href="#" id="btn-pendientes" class="menu-item">
+            <span class="icon">📋</span>
+            <span class="text">Solicitudes pendientes</span>
+        </a></li>
+        <li><a href="#" id="btn-conductores" class="menu-item">
+            <span class="icon">✇</span>
+            <span class="text">Gestión de conductores</span>
+        </a></li>
+        <li><a href="#" id="btn-autos" class="menu-item">
+            <span class="icon">🚐</span>
+            <span class="text">Gestión de vehiculos</span>
+        </a></li>
+        <li><a href="#" id="btn-rutas" class="menu-item">
+            <span class="icon">🗺️</span>
+            <span class="text">Gestión de Rutas</span>
+        </a></li>
+        <!-- Nuevos módulos agregados -->
+        <li><a href="#" id="btn-todos-conductores" class="menu-item">
+            <span class="icon">👨‍✈️</span>
+            <span class="text">Todos los Conductores</span>
+        </a></li>
+        <li><a href="#" id="btn-todos-vehiculos" class="menu-item">
+            <span class="icon">🚗</span>
+            <span class="text">Todos los Vehículos</span>
+        </a></li>
+        <li><a href="#" id="btn-todos-rutas" class="menu-item">
+            <span class="icon">📍</span>
+            <span class="text">Todas las Rutas</span>
+        </a></li>
+        <li><a href="#" id="btn-historial" class="menu-item">
+            <span class="icon">📜</span>
+            <span class="text">Historial de viajes</span>
+        </a></li>
+        <li><a href="#" id="btn-perfil" class="menu-item">
+            <span class="icon">📈</span>
+            <span class="text">Modulo de Predicción</span>
+        </a></li>
+        <li class="logout-item"><a href="#" id="logoutBtn" class="menu-item">
+            <span class="icon">🚪</span>
+            <span class="text">Cerrar sesión</span>
+        </a></li>
+    </ul>
+</div>
+
+<div class="main-content" id="main-content">
+    <div class="content-header">
+        <h1>Bienvenido, Administrador</h1>
+        <p>Selecciona una opción del menú para comenzar.</p>
+    </div>
+</div>
+
+<!-- Modal para asignar conductor a viaje -->
+<div id="modal-asignar" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Asignar Conductor</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="modal-info"></p>
+            <div id="lista-conductores-disponibles"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para asignar vehículo a conductor - MEJORADO -->
+<div id="modal-asignar-vehiculo" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Asignar Vehículo a Conductor</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="driver-info-card">
+                <div class="driver-avatar">
+                    <span>👨‍✈️</span>
+                </div>
+                <div class="driver-details">
+                    <h4 id="modal-driver-name"></h4>
+                    <p id="modal-driver-info"></p>
+                </div>
+            </div>
+
+            <div class="vehicle-selection">
+                <h4>Selecciona un vehículo:</h4>
+                <div class="search-box">
+                    <input type="text" id="search-vehiculo" placeholder="Buscar vehículo por placa, marca o modelo...">
+                    <span class="search-icon">🔍</span>
+                </div>
+
+                <div class="vehicles-list" id="vehicles-list">
+                    <!-- Los vehículos se cargarán aquí -->
+                </div>
+
+                <div class="selected-vehicle" id="selected-vehicle" style="display: none;">
+                    <h5>Vehículo seleccionado:</h5>
+                    <div class="vehicle-card selected">
+                        <div class="vehicle-icon">🚗</div>
+                        <div class="vehicle-info">
+                            <h4 id="selected-vehicle-name"></h4>
+                            <p id="selected-vehicle-details"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="btn-confirmar-asignacion" class="btn-primary" disabled>Confirmar Asignación</button>
+                    <button id="btn-cancelar-asignacion" class="btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar conductor -->
+<div id="modal-editar-conductor" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Editar Conductor</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="form-editar-conductor">
+                <input type="hidden" id="edit-driver-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-driver-fullname" required />
+                            <label for="edit-driver-fullname" class="label">
+                                <span class="icon">👤</span>
+                                Nombre completo
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-driver-lastname" required />
+                            <label for="edit-driver-lastname" class="label">
+                                <span class="icon">📝</span>
+                                Apellido
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-driver-username" required />
+                            <label for="edit-driver-username" class="label">
+                                <span class="icon">🔑</span>
+                                Usuario
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="email" id="edit-driver-email" required />
+                            <label for="edit-driver-email" class="label">
+                                <span class="icon">📧</span>
+                                Correo electrónico
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-driver-number" required />
+                            <label for="edit-driver-number" class="label">
+                                <span class="icon">📱</span>
+                                Teléfono
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-driver-documentNumber" required />
+                            <label for="edit-driver-documentNumber" class="label">
+                                <span class="icon">🆔</span>
+                                Número de documento
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Actualizar Conductor</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar vehículo -->
+<div id="modal-editar-vehiculo" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Editar Vehículo</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="form-editar-vehiculo">
+                <input type="hidden" id="edit-vehicle-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-vehicle-plate" required />
+                            <label for="edit-vehicle-plate" class="label">
+                                <span class="icon">🚗</span>
+                                Placa
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-vehicle-brand" required />
+                            <label for="edit-vehicle-brand" class="label">
+                                <span class="icon">🏷️</span>
+                                Marca
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-vehicle-model" required />
+                            <label for="edit-vehicle-model" class="label">
+                                <span class="icon">🚙</span>
+                                Modelo
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="number" id="edit-vehicle-capacity" required min="1" />
+                            <label for="edit-vehicle-capacity" class="label">
+                                <span class="icon">💺</span>
+                                Capacidad
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <select id="edit-vehicle-category" required>
+                                <option value="">Seleccione categoría</option>
+                                <option value="SEDAN">Sedán</option>
+                                <option value="SUV">SUV</option>
+                                <option value="MINIVAN">Minivan</option>
+                                <option value="AUTOBUS">Autobús</option>
+                                <option value="BUS">Bus</option>
+                            </select>
+                            <label for="edit-vehicle-category" class="label">
+                                <span class="icon">📋</span>
+                                Categoría
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Actualizar Vehículo</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar ruta -->
+<div id="modal-editar-ruta" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Editar Ruta</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="form-editar-location">
+                <input type="hidden" id="edit-location-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-location-destination" required />
+                            <label for="edit-location-destination" class="label">
+                                <span class="icon">📍</span>
+                                Destino
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" id="edit-location-description" required />
+                            <label for="edit-location-description" class="label">
+                                <span class="icon">📝</span>
+                                Descripción
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="number" id="edit-location-latitude" step="any" required />
+                            <label for="edit-location-latitude" class="label">
+                                <span class="icon">🌐</span>
+                                Latitud
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="number" id="edit-location-longitude" step="any" required />
+                            <label for="edit-location-longitude" class="label">
+                                <span class="icon">🌐</span>
+                                Longitud
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="number" id="edit-location-price" step="0.01" required />
+                            <label for="edit-location-price" class="label">
+                                <span class="icon">💰</span>
+                                Precio
+                            </label>
+                            <div class="underline"></div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Actualizar Ruta</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript externo -->
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

@@ -66,15 +66,15 @@ public class TravelServices {
         travel.setFinalPrice(location.getPrice());
         travel.setRequestDate(new Date());
 
-        // Guardar en MongoDB
+        // Guardar en mongo
         return travelsRepository.save(travel);
     }
     private BigDecimal estimatePrice(double distanceMeters, double durationSeconds) {
-        double tarifaBase = 5000;  // COP
+        double tarifaBase = 15000;  // COP
         double porKm = 1000;
         double porMinuto = 100;
 
-        double kms = distanceMeters / 1000.0;
+        double kms = distanceMeters / 1500.0;
         double minutos = durationSeconds / 60.0;
 
         double total = tarifaBase + (porKm * kms) + (porMinuto * minutos);

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Cliente - Manzanillo del Mar</title>
+    <link rel="stylesheet" href="/css/cliente-home.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Mapbox CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<!-- Sidebar -->
+<aside id="sidebar">
+    <div class="sidebar-content">
+        <div class="sidebar-header">
+            <h2>Manzanillo del Mar</h2>
+        </div>
+        <div class="sidebar-menu">
+            <a href="#" class="menu-item active" data-section="inicio">
+                <span class="icon">🏠</span>
+                <span class="text">Inicio</span>
+            </a>
+            <a href="#" class="menu-item" data-section="solicitar">
+                <span class="icon">🚗</span>
+                <span class="text">Solicitar viaje</span>
+            </a>
+            <a href="#" class="menu-item" data-section="historial">
+                <span class="icon">📜</span>
+                <span class="text">Historial</span>
+            </a>
+            <a href="#" class="menu-item" data-section="perfil">
+                <span class="icon">👤</span>
+                <span class="text">Perfil</span>
+            </a>
+        </div>
+    </div>
+    <div class="logout-item">
+        <a href="#" class="menu-item" id="logoutBtn">
+            <span class="icon">🚪</span>
+            <span class="text">Cerrar sesión</span>
+        </a>
+    </div>
+    <!-- Botón hamburguesa para móviles -->
+    <div id="menu-toggle" class="menu-toggle">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+
+</aside>
+
+
+<!-- Contenido principal -->
+<main class="content" id="main-content">
+    <!-- Sección Inicio -->
+    <section id="inicio" class="section active">
+        <div class="content-header">
+            <h2>Bienvenido, <span id="userName">Usuario</span></h2>
+            <p>Gestiona tus viajes de forma sencilla</p>
+        </div>
+
+        <div class="card">
+            <h3>Tu próximo viaje</h3>
+            <div id="activeTravels">
+                <p>Cargando viajes activos...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Solicitar Viaje -->
+    <section id="solicitar" class="section">
+        <div class="content-header">
+            <h2>Solicitar Viaje</h2>
+            <p>Selecciona tu destino de la lista</p>
+        </div>
+
+        <div class="card">
+            <div class="form-group">
+                <label for="passengersCount">Número de pasajeros:</label>
+                <input type="number" id="passengersCount" min="1" max="10" value="1">
+            </div>
+
+            <div class="form-group">
+                <label for="destinationSelect">Selecciona un destino:</label>
+                <select id="destinationSelect">
+                    <option value="">-- Selecciona un destino --</option>
+                </select>
+            </div>
+
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+
+            <div id="locationInfo" class="location-info hidden">
+                <h4>Información del destino</h4>
+                <p><strong>Lugar:</strong> <span id="selectedDestination">-</span></p>
+                <p><strong>Precio base:</strong> $<span id="basePrice">0</span></p>
+                <p><strong>Precio final:</strong> $<span id="estimatedPrice">0</span></p>
+                <button id="requestTravelBtn" class="btn">Solicitar Viaje</button>
+            </div>
+
+            <div id="travelMessage" class="message hidden"></div>
+        </div>
+    </section>
+
+    <!-- Sección Historial -->
+    <section id="historial" class="section">
+        <div class="content-header">
+            <h2>Historial de Viajes</h2>
+            <p>Tu historial de viajes completados y cancelados</p>
+        </div>
+
+        <div class="card">
+            <div id="travelHistory">
+                <p>Cargando historial...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Perfil -->
+    <section id="perfil" class="section">
+        <div class="content-header">
+            <h2>Mi Perfil</h2>
+            <p>Gestiona tu información personal</p>
+        </div>
+        <form id="profileForm">
+            <div class="form-group">
+                <label for="fullname">Nombre:</label>
+                <input type="text" id="fullname" name="fullname">
+            </div>
+
+            <div class="form-group">
+                <label for="lastname">Apellido:</label>
+                <input type="text" id="lastname" name="lastname">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email">
+            </div>
+
+            <div class="form-group">
+                <label for="number">Teléfono:</label>
+                <input type="tel" id="number" name="number">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Nueva contraseña:</label>
+                <input type="password" id="password" name="password">
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirmar contraseña:</label>
+                <input type="password" id="confirmPassword" name="confirmPassword"
+                       autocomplete="new-password">
+            </div>
+
+            <button type="button" id="updateProfileBtn" class="btn btn-primary">
+                Actualizar PerfIL</button>
+        </form>
+        <div id="profileMessage" class="message hidden"></div>
+        </div>
+    </section>
+</main>
+<!-- Polyfill para event listeners pasivos -->
+<script>
+    // Fix para event listeners pasivos
+    (function() {
+        if (typeof EventTarget !== "undefined") {
+            let func = EventTarget.prototype.addEventListener;
+            EventTarget.prototype.addEventListener = function(type, fn, capture) {
+                this.func = func;
+                if (typeof capture !== "boolean") {
+                    capture = capture || {};
+                    capture.passive = false;
+                }
+                this.func(type, fn, capture);
+            };
+        }
+    })();
+</script>
+
+<!-- Luego cargas Mapbox -->
+<script src='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.js'></script>
+
+<!-- Mapbox JS -->
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+
+<script src="/js/panelManager.js"></script>
+<script src="/js/client.js"></script>
+</body>
+</html>

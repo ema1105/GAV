@@ -2,11 +2,14 @@ package GAV.GAV.Controllers;
 
 import GAV.GAV.Collections.Cars;
 import GAV.GAV.Collections.Locations;
+
 import GAV.GAV.Collections.Users;
 import GAV.GAV.DTO.DriverAvaibleDTO;
 import GAV.GAV.DTO.PendingRequestDTO;
 import GAV.GAV.DTO.TravelClientResponse;
+import GAV.GAV.Repositories.TravelsRepository;
 import GAV.GAV.Services.AdminServices;
+import GAV.GAV.Services.TravelServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +21,16 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin")
-//@CrossOrigin(origins = "*") // permite acceso desde Flutter
 public class AdminController {
 
     @Autowired
     private AdminServices adminService;
+
+    @Autowired
+    private TravelServices travelServices;
+
+    @Autowired
+    private TravelsRepository travelsRepository;
 
     // -------------------- VEHÍCULOS --------------------
 
@@ -122,8 +130,8 @@ public class AdminController {
         }
     }
 
-    // -------------------- LOCACIONES --------------------
 
+    // -------------------- LOCACIONES --------------------
     @Autowired
     private GAV.GAV.Repositories.LocationRepository locationRepository;
 
@@ -173,7 +181,6 @@ public class AdminController {
     }
 
     // -------------------- SOLICITUDES DE VIAJES --------------------
-
     @GetMapping("/travels/pending")
     public ResponseEntity<?> getPendingRequests() {
         try {

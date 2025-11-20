@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel del Conductor</title>
+  <link th:href="@{/css/driver.css}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>Panel del Conductor</h2>
+  </div>
+  <ul class="sidebar-menu">
+    <li><a href="#" id="btn-inicio" class="menu-item active"><span class="icon">🏠</span><span class="text">Inicio</span></a></li>
+    <li><a href="#" id="btn-solicitudes" class="menu-item"><span class="icon">📋</span><span class="text">Solicitudes</span></a></li>
+    <li><a href="#" id="btn-viajes" class="menu-item"><span class="icon">🚗</span><span class="text">Viajes Asignados</span></a></li>
+    <li><a href="#" id="btn-historial" class="menu-item"><span class="icon">📜</span><span class="text">Historial</span></a></li>
+    <li><a href="#" id="btn-perfil" class="menu-item"><span class="icon">👤</span><span class="text">Perfil</span></a></li>
+    <li><a href="#" id="logoutBtn" class="menu-item"><span class="icon">🚪</span><span class="text">Cerrar sesión</span></a></li>
+    <li><a href="#" id="btn-ruta" class="menu-item"><span class="icon">🗺️</span><span class="text">Ruta de viaje</span></a></li>
+
+  </ul>
+</div>
+
+<div class="main-content" id="main-content">
+  <div class="content-header">
+    <h1>Bienvenido, Conductor</h1>
+    <p>Selecciona una opción del menú para comenzar.</p>
+  </div>
+</div>
+
+<script th:src="@{/js/driver.js}"></script>
+</body>
+</html>

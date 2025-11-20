@@ -35,7 +35,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
                     return "/cliente/inicio";
             }
         }
-        return "/"; // Si no se reconoce el rol
+        return "/";
     }
 }
 

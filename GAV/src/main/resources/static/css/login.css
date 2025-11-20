@@ -1,0 +1,335 @@
+:root {
+    --beige-light: #f5f1e8;
+    --beige-medium: #e8dfd0;
+    --beige-dark: #d6ccb8;
+    --beige-darker: #c4b7a1;
+    --black: #1a1a1a;
+    --black-medium: #2d2d2d;
+    --black-light: #404040;
+    --white: #ffffff;
+    --accent: #8b7355;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, var(--beige-light) 0%, var(--beige-medium) 100%);
+    color: var(--black);
+    line-height: 1.6;
+    font-weight: 400;
+}
+
+/* ==== Contenedor principal ==== */
+.login-container {
+    display: flex;
+    width: 900px;
+    height: 550px;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+/* ==== Panel de imagen ==== */
+.login-image {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.8);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.7) 0%, rgba(43, 43, 43, 0.4) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    text-align: center;
+    padding: 40px;
+}
+
+.image-overlay h1 {
+    font-size: 2.5em;
+    font-weight: 600;
+    margin-bottom: 15px;
+    letter-spacing: -0.5px;
+}
+
+.image-overlay p {
+    font-size: 1.1em;
+    font-weight: 300;
+    opacity: 0.9;
+}
+
+/* ==== Panel del formulario ==== */
+.login-form {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 50px;
+    background: var(--white);
+}
+
+.form-container {
+    width: 100%;
+    max-width: 320px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.form-header h2 {
+    font-size: 2em;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.form-header p {
+    color: var(--black-light);
+    font-size: 1em;
+    font-weight: 400;
+}
+
+/* ==== Formulario ==== */
+.form {
+    width: 100%;
+}
+
+.input-container {
+    position: relative;
+    margin-bottom: 35px;
+    width: 100%;
+}
+
+.input-container input {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid var(--beige-medium);
+    padding: 12px 0 12px 40px;
+    font-size: 16px;
+    background: transparent;
+    outline: none;
+    color: var(--black);
+    font-weight: 400;
+    transition: all 0.3s ease;
+}
+
+.input-container input:focus {
+    border-bottom-color: var(--black);
+}
+
+/* Etiquetas flotantes */
+.input-container .label {
+    position: absolute;
+    top: 12px;
+    left: 40px;
+    color: var(--black-light);
+    pointer-events: none;
+    transition: all 0.3s ease;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-container .label .icon {
+    font-size: 1.1em;
+}
+
+.input-container input:focus ~ .label,
+.input-container input:valid ~ .label {
+    top: -18px;
+    font-size: 12px;
+    color: var(--black);
+    left: 0;
+}
+
+.input-container input:focus ~ .label .icon,
+.input-container input:valid ~ .label .icon {
+    opacity: 0.7;
+}
+
+/* Línea animada */
+.input-container .underline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 0;
+    background: linear-gradient(90deg, var(--black) 0%, var(--beige-dark) 100%);
+    transition: width 0.3s ease;
+}
+
+.input-container input:focus ~ .underline {
+    width: 100%;
+}
+
+/* ==== Botón ==== */
+.login-btn {
+    width: 100%;
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.login-btn:hover {
+    background: var(--black-medium);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-text {
+    font-weight: 500;
+}
+
+.btn-icon {
+    font-size: 1.1em;
+    transition: transform 0.3s ease;
+}
+
+.login-btn:hover .btn-icon {
+    transform: translateX(3px);
+}
+
+/* ==== Enlace de registro ==== */
+.register-link {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid var(--beige-medium);
+}
+
+.register-link p {
+    color: var(--black-light);
+    font-size: 14px;
+}
+
+.register-link a {
+    color: var(--black);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+.register-link a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--black);
+    transition: width 0.3s ease;
+}
+
+.register-link a:hover {
+    color: var(--black-medium);
+}
+
+.register-link a:hover::after {
+    width: 100%;
+}
+
+/* ==== Animaciones ==== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==== Responsive ==== */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+        width: 90%;
+        height: auto;
+        max-width: 400px;
+    }
+
+    .login-image {
+        height: 200px;
+        flex: none;
+    }
+
+    .image-overlay {
+        padding: 20px;
+    }
+
+    .image-overlay h1 {
+        font-size: 2em;
+    }
+
+    .login-form {
+        padding: 40px 30px;
+    }
+
+    .form-container {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        width: 95%;
+    }
+
+    .login-form {
+        padding: 30px 25px;
+    }
+
+    .form-header h2 {
+        font-size: 1.7em;
+    }
+
+    .input-container input {
+        padding: 12px 0 12px 35px;
+    }
+
+    .input-container .label {
+        left: 35px;
+    }
+}

@@ -18,13 +18,17 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Autowired
     private UsersRepository usersRepository;
 
+    public CustomUserDetailsService(UsersRepository usersRepository){
+        this.usersRepository = usersRepository;
+    }
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Users user = usersRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con username: " + username));
 
-        // Convertir el rol de tu entidad Users a un GrantedAuthority que Spring Security reconozca
-        GrantedAuthority authority = new SimpleGrantedAuthority(user.getRol().name());
+        // Convertir el rol de Users a un GrantedAuthority que Spring Security reconozca
+         GrantedAuthority authority = new SimpleGrantedAuthority(user.getRol().name());
 
         // Retornar el usuario compatible con Spring Security
         return new User(

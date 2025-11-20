@@ -1,17 +1,13 @@
 package GAV.GAV.Services;
 
+import GAV.GAV.Collections.*;
+import GAV.GAV.DTO.ClientProfileDTO;
+import GAV.GAV.Repositories.*;
 import org.springframework.stereotype.Service;
 
-import GAV.GAV.Collections.Cars;
-import GAV.GAV.Collections.Travels;
-import GAV.GAV.Collections.Users;
 import GAV.GAV.DTO.DriverAvaibleDTO;
 import GAV.GAV.DTO.PendingRequestDTO;
 import GAV.GAV.DTO.TravelClientResponse;
-import GAV.GAV.Repositories.CarsRepository;
-import GAV.GAV.Repositories.LocationRepository;
-import GAV.GAV.Repositories.TravelsRepository;
-import GAV.GAV.Repositories.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +33,9 @@ public class AdminServices {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private RatingRepository ratingRepository;
 
     // -------------------- CONDUCTORES --------------------
 
@@ -146,9 +145,12 @@ public class AdminServices {
         List<Travels> travels = travelsRepository.findByTravelStatus(Travels.TravelStatus.REQUESTED);
 
         return travels.stream().map(travel -> {
-            String destinationName = travel.getIdLocation() != null
-                    ? travel.getIdLocation()
-                    : "Destino no especificado";
+            String destinationName = "Desconocido";
+            if (travel.getIdLocation() != null) {
+                destinationName = locationRepository.findById(travel.getIdLocation())
+                        .map(Locations::getDestination)
+                        .orElse("Desconocido");
+            }
 
             Users client = usersRepository.findById(travel.getIdClient()).orElse(null);
             String clientName = (client != null)
@@ -157,7 +159,7 @@ public class AdminServices {
 
             return new PendingRequestDTO(
                     travel.getId(),
-                    destinationName,
+                    destinationName,  // Ahora es el nombre real, no el ID
                     clientName,
                     travel.getNumberPassengers(),
                     travel.getRequestDate()
@@ -212,6 +214,7 @@ public class AdminServices {
         travelsRepository.save(travel);
         usersRepository.save(driver);
     }
+    //-----------------HISTORIAL------------//
 
     public List<TravelClientResponse> getAllTravelHistory() {
         List<Travels.TravelStatus> completedStatuses = List.of(
@@ -223,7 +226,9 @@ public class AdminServices {
 
         return travels.stream().map(travel -> {
             String destinationName = travel.getIdLocation() != null
-                    ? travel.getIdLocation()
+                    ? locationRepository.findById(travel.getIdLocation())
+                    .map(Locations::getDestination)
+                    .orElse("Desconocido")
                     : "Desconocido";
 
             TravelClientResponse.ConductorInfo driverInfo = null;
@@ -248,6 +253,13 @@ public class AdminServices {
                 duration = String.format("%02d:%02d", hours, mins);
             }
 
+            // Obtener calificación del viaje
+            Rating rating = ratingRepository.findByIdTravelAndTypeQualification(
+                    travel.getId(), Rating.TypeQualification.CLIENT_TO_DRIVER).orElse(null);
+
+            Integer ratingValue = rating != null ? rating.getPunctuation() : null;
+            String comment = rating != null ? rating.getComments() : null;
+
             return new TravelClientResponse(
                     travel.getId(),
                     travel.getNumberPassengers(),
@@ -259,7 +271,9 @@ public class AdminServices {
                     destinationName,
                     driverInfo,
                     travel.getFinalPrice(),
-                    duration
+                    duration,
+                    ratingValue,
+                    comment
             );
         }).toList();
     }
