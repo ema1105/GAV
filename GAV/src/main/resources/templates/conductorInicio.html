@@ -6,31 +6,138 @@
   <title>Panel del Conductor</title>
   <link th:href="@{/css/driver.css}" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Mapbox CSS -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-<div class="sidebar">
-  <div class="sidebar-header">
-    <h2>Panel del Conductor</h2>
+<!-- Sidebar -->
+<aside id="sidebar" class="sidebar">
+  <div class="sidebar-content">
+    <div class="sidebar-header">
+      <h2>Panel del Conductor</h2>
+    </div>
+    <nav class="sidebar-menu">
+      <a href="#" class="menu-item active" data-section="inicio">
+        <span class="icon">🏠</span>
+        <span class="text">Inicio</span>
+      </a>
+      <a href="#" class="menu-item" data-section="solicitudes">
+        <span class="icon">📋</span>
+        <span class="text">Solicitudes</span>
+      </a>
+      <a href="#" class="menu-item" data-section="viajes">
+        <span class="icon">🚗</span>
+        <span class="text">Viajes Asignados</span>
+      </a>
+      <a href="#" class="menu-item" data-section="ruta">
+        <span class="icon">🗺️</span>
+        <span class="text">Ruta de viaje</span>
+      </a>
+      <a href="#" class="menu-item" data-section="historial">
+        <span class="icon">📜</span>
+        <span class="text">Historial</span>
+      </a>
+      <a href="#" class="menu-item" data-section="perfil">
+        <span class="icon">👤</span>
+        <span class="text">Perfil</span>
+      </a>
+    </nav>
   </div>
-  <ul class="sidebar-menu">
-    <li><a href="#" id="btn-inicio" class="menu-item active"><span class="icon">🏠</span><span class="text">Inicio</span></a></li>
-    <li><a href="#" id="btn-solicitudes" class="menu-item"><span class="icon">📋</span><span class="text">Solicitudes</span></a></li>
-    <li><a href="#" id="btn-viajes" class="menu-item"><span class="icon">🚗</span><span class="text">Viajes Asignados</span></a></li>
-    <li><a href="#" id="btn-historial" class="menu-item"><span class="icon">📜</span><span class="text">Historial</span></a></li>
-    <li><a href="#" id="btn-perfil" class="menu-item"><span class="icon">👤</span><span class="text">Perfil</span></a></li>
-    <li><a href="#" id="logoutBtn" class="menu-item"><span class="icon">🚪</span><span class="text">Cerrar sesión</span></a></li>
-    <li><a href="#" id="btn-ruta" class="menu-item"><span class="icon">🗺️</span><span class="text">Ruta de viaje</span></a></li>
-
-  </ul>
-</div>
-
-<div class="main-content" id="main-content">
-  <div class="content-header">
-    <h1>Bienvenido, Conductor</h1>
-    <p>Selecciona una opción del menú para comenzar.</p>
+  <div class="logout-item">
+    <a href="#" class="menu-item" id="logoutBtn">
+      <span class="icon">🚪</span>
+      <span class="text">Cerrar sesión</span>
+    </a>
   </div>
-</div>
+  <!-- Botón hamburguesa para móviles -->
+  <div id="menu-toggle" class="menu-toggle">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</aside>
 
+<!-- Contenido principal -->
+<main class="main-content" id="main-content">
+  <!-- Sección Inicio -->
+  <section id="inicio" class="section active">
+    <div class="content-header">
+      <h1>Bienvenido, <span id="driverName">Conductor</span></h1>
+      <p>Gestiona tus viajes y solicitudes desde este panel.</p>
+    </div>
+    <div id="inicio-content"></div>
+  </section>
+
+  <!-- Sección Solicitudes -->
+  <section id="solicitudes" class="section hidden">
+    <div class="content-header">
+      <h2>Solicitudes de Viaje</h2>
+      <p>Gestiona las solicitudes de viaje asignadas a ti.</p>
+    </div>
+    <div id="solicitudes-content"></div>
+  </section>
+
+  <!-- Sección Viajes -->
+  <section id="viajes" class="section hidden">
+    <div class="content-header">
+      <h2>Viajes Asignados y en Curso</h2>
+      <p>Gestiona tus viajes actualmente asignados.</p>
+    </div>
+    <div id="viajes-content"></div>
+  </section>
+
+  <!-- Sección Ruta -->
+  <section id="ruta" class="section hidden">
+    <div class="content-header">
+      <h2>Ruta de Viaje</h2>
+      <p>Visualiza y navega la ruta de tu viaje activo.</p>
+    </div>
+    <div id="ruta-content"></div>
+  </section>
+
+  <!-- Sección Historial -->
+  <section id="historial" class="section hidden">
+    <div class="content-header">
+      <h2>Historial de Viajes</h2>
+      <p>Consulta tu historial de viajes realizados.</p>
+    </div>
+    <div id="historial-content"></div>
+  </section>
+
+  <!-- Sección Perfil -->
+  <section id="perfil" class="section hidden">
+    <div class="content-header">
+      <h2>Mi Perfil</h2>
+      <p>Gestiona tu información personal y del vehículo.</p>
+    </div>
+    <div id="perfil-content"></div>
+  </section>
+</main>
+
+<!-- Polyfill para event listeners pasivos -->
+<script>
+    // Fix para event listeners pasivos
+    (function() {
+        if (typeof EventTarget !== "undefined") {
+            let func = EventTarget.prototype.addEventListener;
+            EventTarget.prototype.addEventListener = function(type, fn, capture) {
+                this.func = func;
+                if (typeof capture !== "boolean") {
+                    capture = capture || {};
+                    capture.passive = false;
+                }
+                this.func(type, fn, capture);
+            };
+        }
+    })();
+</script>
+
+<!-- Mapbox JS -->
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+
+<script th:src="@{/js/panelManager.js}"></script>
 <script th:src="@{/js/driver.js}"></script>
 </body>
 </html>

@@ -11,7 +11,6 @@ import java.util.Objects;
 @Document(collection = "users")
 public class Users {
 
-    // atributos basicos de un usuario, sin tener en cuenta el rol
     @Id
     private String id;
 

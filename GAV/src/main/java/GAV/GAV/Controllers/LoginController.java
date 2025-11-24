@@ -22,12 +22,12 @@ public class LoginController {
 
     @GetMapping("/login")
     public String loginPage() {
-        return "login"; // Carga templates/login.html
+        return "login";
     }
 
     @GetMapping("/register")
     public String registerPage() {
-        return "register"; // Carga templates/register.html
+        return "register";
     }
 
     @PostMapping("/register")

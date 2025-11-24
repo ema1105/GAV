@@ -2120,15 +2120,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         <tbody>
             `;
 
+            //cambio aqui
             travelsPage.forEach(travel => {
-                // CORRECCIÓN: Usar valores por defecto para evitar undefined
-                const fechaSolicitud = travel.requestDate ? new Date(travel.requestDate).toLocaleString('es-CO') : 'N/A';
-                const conductorNombre = travel.driverInfo?.fullname || 'No asignado';
+
+                const fechaSolicitud = travel.requestDate ? new Date(travel.requestDate).toLocaleString('es-CO')
+                 : 'N/A';
+                const conductorNombre = travel.conductor?.nombreCompleto|| 'No asignado';
                 const clienteNombre = travel.clienteNombre || 'N/A';
                 const destinoNombre = travel.destinoNombre || 'N/A';
-                const numeroPasajeros = travel.numberPassengers || '0';
-                const estado = travel.travelStatus?.name || 'Desconocido';
-                const precioFinal = travel.finalPrice || '0';
+                const numeroPasajeros = travel.cantidadPasajeros|| '0';
+                const estado = travel.estadoViaje || 'Desconocido';
+                const precioFinal = travel.precioFinal || '0';
 
                 // CORRECCIÓN: Usar toLowerCase() correctamente
                 const estadoClase = estado ? estado.toLowerCase() : 'desconocido';
@@ -2212,58 +2214,386 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // === MODULO PREDICTIVO ===
-    document.getElementById("btn-perfil").addEventListener("click", (e) => {
-        setActiveMenuItem(e.currentTarget);
-        content.innerHTML = `
-            <div class="content-header">
-                <h2>Modelo Predictivo</h2>
-                <p>Consulta la puntualidad estimada de un viaje usando el modelo entrenado.</p>
-            </div>
+      document.getElementById("btn-perfil").addEventListener("click", (e) => {
+          setActiveMenuItem(e.currentTarget);
+          content.innerHTML = `
+              <div class="content-header">
+                  <h2>🔮 Modelo Predictivo de Puntualidad</h2>
+                  <p>Consulta la puntualidad estimada de los conductores usando inteligencia artificial.</p>
+              </div>
 
-            <div class="card">
-                <form id="form-predict" class="predict-form">
-                    <div class="form-group">
-                        <label for="travelId">ID del viaje:</label>
-                        <input type="text" id="travelId" required placeholder="Ej: 670c1d2f8a..." />
-                    </div>
-                    <button type="submit" class="btn-primary">Predecir Puntualidad</button>
-                </form>
-            </div>
+              <div class="card">
+                  <div class="prediction-info">
+                      <h3>⚠️ Información Importante</h3>
+                      <p>Para que la predicción funcione correctamente, los viajes deben tener:</p>
+                      <ul>
+                          <li>✅ <strong>Fecha de solicitud</strong> (RequestDate)</li>
+                          <li>✅ <strong>Fecha de inicio del viaje</strong> (StartDate)</li>
+                          <li>✅ <strong>Conductor asignado</strong></li>
+                      </ul>
+                      <p class="warning-text">Actualmente muchos viajes no tienen fecha de inicio, lo que impide realizar predicciones.</p>
+                  </div>
+              </div>
 
-            <div id="resultado-prediccion" class="result-box"></div>
-        `;
+              <div class="card">
+                  <h3>Realizar Predicción</h3>
+                  <form id="form-predict" class="predict-form">
+                      <div class="form-group">
+                          <div class="input-container">
+                              <input type="text" id="travelId" required placeholder=" " />
+                              <label for="travelId" class="label">
+                                  <span class="icon">📋</span>
+                                  ID del Viaje
+                              </label>
+                              <div class="underline"></div>
+                          </div>
+                          <small class="input-help">Ingresa el ID de un viaje que tenga conductor asignado y fecha de inicio</small>
+                      </div>
 
-        const form = document.getElementById("form-predict");
-        const resultadoDiv = document.getElementById("resultado-prediccion");
+                      <button type="submit" class="btn-primary btn-predict">
+                          <span class="btn-text">🔮 Predecir Puntualidad</span>
+                          <span class="btn-icon">→</span>
+                      </button>
+                  </form>
+              </div>
 
-        form.addEventListener("submit", async (ev) => {
-            ev.preventDefault();
-            const travelId = document.getElementById("travelId").value.trim();
-            if (!travelId) {
-                alert("Por favor ingresa un ID de viaje válido.");
-                return;
-            }
+              <div id="resultado-prediccion" class="result-container"></div>
 
-            resultadoDiv.innerHTML = "<p>🔄 Procesando predicción...</p>";
+              <div class="card">
+                  <h3>📈 Viajes Disponibles para Predicción</h3>
+                  <div class="filter-info">
+                      <p>Mostrando solo viajes que pueden ser procesados por el modelo predictivo</p>
+                  </div>
+                  <div id="lista-viajes-predictivos" class="table-container">
+                      <p>Cargando viajes disponibles...</p>
+                  </div>
+              </div>
+          `;
 
-            try {
-                const res = await fetch(`/api/prediction/${travelId}`);
-                if (!res.ok) throw new Error("No se pudo obtener la predicción.");
+          const form = document.getElementById("form-predict");
+          const resultadoDiv = document.getElementById("resultado-prediccion");
 
-                const data = await res.json();
-                resultadoDiv.innerHTML = `
-                    <div class="card">
-                        <h3>Resultado de la predicción</h3>
-                        <p><strong>Predicción:</strong> ${data.prediccion}</p>
-                        <p><strong>Probabilidad:</strong> ${(data.probabilidad * 100).toFixed(2)}%</p>
-                    </div>
-                `;
-            } catch (err) {
-                console.error(err);
-                resultadoDiv.innerHTML = `<p class="error-state">❌ Error al realizar la predicción.</p>`;
-            }
-        });
-    });
+          // Cargar viajes que cumplan con los requisitos para predicción
+          cargarViajesParaPrediccion();
+
+          form.addEventListener("submit", async (ev) => {
+              ev.preventDefault();
+              const travelId = document.getElementById("travelId").value.trim();
+
+              if (!travelId) {
+                  mostrarError("Por favor ingresa un ID de viaje válido.");
+                  return;
+              }
+
+              await realizarPrediccion(travelId);
+          });
+
+          async function cargarViajesParaPrediccion() {
+              try {
+                  // Obtener todos los viajes para filtrar los que sirven para predicción
+                  const response = await fetch("/api/admin/travels/history");
+                  const listaDiv = document.getElementById("lista-viajes-predictivos");
+
+                  if (!response.ok) {
+                      listaDiv.innerHTML = '<p class="empty-state">No se pudieron cargar los viajes.</p>';
+                      return;
+                  }
+
+                  const travels = await response.json();
+
+                  // Filtrar viajes que tengan conductor asignado (para poder hacer predicción)
+                  const travelsConConductor = travels.filter(travel =>
+                      travel.idDriver && travel.idDriver !== '' && travel.idDriver !== null
+                  );
+
+                  if (travelsConConductor.length === 0) {
+                      listaDiv.innerHTML = `
+                          <div class="empty-state">
+                              <p>No hay viajes con conductor asignado para predecir.</p>
+                              <p class="small-text">Los viajes necesitan tener conductor asignado para poder realizar predicciones.</p>
+                          </div>
+                      `;
+                      return;
+                  }
+
+                  let tablaHTML = `
+                      <table class="data-table">
+                          <thead>
+                              <tr>
+                                  <th>ID Viaje</th>
+                                  <th>Cliente</th>
+                                  <th>Conductor</th>
+                                  <th>Destino</th>
+                                  <th>Estado</th>
+                                  <th>Fecha Solicitud</th>
+                                  <th>¿Puede Predecir?</th>
+                                  <th>Acción</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                  `;
+
+                  travelsConConductor.forEach(travel => {
+                      const fechaSolicitud = travel.requestDate ?
+                          new Date(travel.requestDate).toLocaleString('es-CO') : 'N/A';
+
+                      // Verificar si tiene startDate (requerido para predicción)
+                      const tieneStartDate = travel.startDate != null;
+                      const puedePredecir = tieneStartDate ? '✅ Sí' : '❌ No (falta StartDate)';
+                      const estado = travel.travelStatus || 'N/A';
+                      const conductorNombre = travel.driverInfo?.fullname || 'Conductor asignado';
+
+                      tablaHTML += `
+                          <tr>
+                              <td><code class="travel-id">${travel.id || 'N/A'}</code></td>
+                              <td>${travel.clienteNombre || travel.clientName || 'N/A'}</td>
+                              <td>${conductorNombre}</td>
+                              <td>${travel.destinoNombre || travel.destinationName || 'N/A'}</td>
+                              <td><span class="status-${estado.toLowerCase()}">${estado}</span></td>
+                              <td>${fechaSolicitud}</td>
+                              <td>${puedePredecir}</td>
+                              <td>
+                                  <button class="btn-primary btn-sm usar-viaje ${!tieneStartDate ? 'disabled' : ''}"
+                                          data-id="${travel.id}"
+                                          ${!tieneStartDate ? 'disabled title="Este viaje no tiene fecha de inicio (StartDate)"' : ''}>
+                                      🔮 Predecir
+                                  </button>
+                              </td>
+                          </tr>
+                      `;
+                  });
+
+                  tablaHTML += `</tbody></table>`;
+                  listaDiv.innerHTML = tablaHTML;
+
+                  // Asignar eventos a los botones "Predecir" (solo los habilitados)
+                  document.querySelectorAll(".usar-viaje:not(.disabled)").forEach(btn => {
+                      btn.addEventListener("click", () => {
+                          const travelId = btn.getAttribute("data-id");
+                          document.getElementById("travelId").value = travelId;
+                          realizarPrediccion(travelId);
+                      });
+                  });
+
+              } catch (error) {
+                  console.error("Error al cargar viajes:", error);
+                  const listaDiv = document.getElementById("lista-viajes-predictivos");
+                  if (listaDiv) {
+                      listaDiv.innerHTML = '<p class="error-state">Error al cargar viajes disponibles.</p>';
+                  }
+              }
+          }
+
+          async function realizarPrediccion(travelId) {
+              const resultadoDiv = document.getElementById("resultado-prediccion");
+              if (!resultadoDiv) {
+                  console.error("Elemento resultado-prediccion no encontrado");
+                  return;
+              }
+
+              // Mostrar estado de carga
+              resultadoDiv.innerHTML = `
+                  <div class="prediction-loading">
+                      <div class="loading-spinner"></div>
+                      <h4>Analizando datos del viaje...</h4>
+                      <p>El modelo de IA está procesando la información para generar la predicción.</p>
+                      <div class="loading-details">
+                          <div class="loading-step">✓ Obteniendo datos del viaje</div>
+                          <div class="loading-step">🔄 Analizando patrones temporales</div>
+                          <div class="loading-step">⏳ Evaluando historial del conductor</div>
+                          <div class="loading-step">📊 Calculando probabilidades</div>
+                      </div>
+                  </div>
+              `;
+
+              try {
+                  const response = await fetch(`/api/prediccion/${travelId}`, {
+                      headers: {
+                          'Accept': 'application/json',
+                          'Content-Type': 'application/json'
+                      }
+                  });
+
+                  if (!response.ok) {
+                      let errorMessage = "Error al obtener la predicción";
+
+                      // Intentar obtener mensaje de error del servidor en formato JSON
+                      try {
+                          const errorData = await response.json();
+                          if (errorData && errorData.error) {
+                              const errorText = errorData.error;
+                              // Si el error contiene el mensaje específico sobre fechas
+                              if (errorText.includes("fechas suficientes") || errorText.includes("StartDate")) {
+                                  errorMessage = "❌ No se puede predecir: El viaje no tiene fecha de inicio (StartDate) registrada en la base de datos.";
+                              } else if (errorText.includes("Conductor no encontrado")) {
+                                  errorMessage = "❌ No se puede predecir: El conductor asignado al viaje no existe o fue eliminado.";
+                              } else {
+                                  errorMessage = `❌ ${errorText}`;
+                              }
+                          } else {
+                              errorMessage = `Error HTTP ${response.status}: ${response.statusText}`;
+                          }
+                      } catch (e) {
+                          // Si no se puede parsear como JSON, intentar como texto
+                          try {
+                              const errorText = await response.text();
+                              if (errorText) {
+                                  errorMessage = `Error del servidor: ${errorText}`;
+                              } else {
+                                  errorMessage = `Error HTTP ${response.status}: ${response.statusText}`;
+                              }
+                          } catch (e2) {
+                              errorMessage = `Error ${response.status}: ${response.statusText}`;
+                          }
+                      }
+                      throw new Error(errorMessage);
+                  }
+
+                  const data = await response.json();
+                  mostrarResultadoPrediccion(data, travelId);
+
+              } catch (error) {
+                  console.error("Error en la predicción:", error);
+                  mostrarError(error.message);
+              }
+          }
+
+          function mostrarResultadoPrediccion(data, travelId) {
+              const resultadoDiv = document.getElementById("resultado-prediccion");
+              if (!resultadoDiv) return;
+
+              const prediccion = data.clasePredicha || data.prediccion;
+              const probabilidad = data.probabilidad || 0;
+
+              // Determinar el tipo de resultado y estilos
+              let icono, titulo, claseCSS, descripcion, recomendacion;
+
+              if (prediccion === 'puntual') {
+                  icono = '✅';
+                  titulo = 'CONDUCTOR PUNTUAL';
+                  claseCSS = 'prediction-success';
+                  descripcion = 'El modelo predice que el conductor llegará a tiempo.';
+                  //recomendacion = 'Puedes proceder con la asignación con confianza.';
+              } else if (prediccion === 'tarde') {
+                  icono = '⚠️';
+                  titulo = 'POSIBLE RETRASO';
+                  claseCSS = 'prediction-warning';
+                  descripcion = 'El modelo detecta un alto riesgo de retraso.';
+                  //recomendacion = 'Considera asignar un conductor alternativo o notificar al cliente.';
+              } else {
+                  icono = '❌';
+                  titulo = 'ERROR EN PREDICCIÓN';
+                  claseCSS = 'prediction-error';
+                  descripcion = 'No se pudo determinar la puntualidad.';
+                  recomendacion = 'Verifica los datos del viaje e intenta nuevamente.';
+              }
+
+              resultadoDiv.innerHTML = `
+                  <div class="prediction-result ${claseCSS}">
+                      <div class="prediction-header">
+                          <div class="prediction-icon">${icono}</div>
+                          <div class="prediction-title">
+                              <h3>${titulo}</h3>
+                              <p>Viaje ID: <code>${travelId}</code></p>
+                          </div>
+                      </div>
+
+                      <div class="prediction-body">
+                          <div class="probability-meter">
+                              <div class="probability-label">
+                                  <span>Probabilidad de acierto:</span>
+                                  <strong>${(probabilidad * 100).toFixed(1)}%</strong>
+                              </div>
+                              <div class="probability-bar">
+                                  <div class="probability-fill" style="width: ${probabilidad * 100}%"></div>
+                              </div>
+                          </div>
+
+                          <div class="prediction-details">
+                              <div class="detail-item">
+                                  <span class="detail-label">Resultado:</span>
+                                  <span class="detail-value ${prediccion}">${prediccion?.toUpperCase() || 'DESCONOCIDO'}</span>
+                              </div>
+                              <div class="detail-item">
+                                  <span class="detail-label">Confianza:</span>
+                                  <span class="detail-value">${(probabilidad * 100).toFixed(1)}%</span>
+                              </div>
+                          </div>
+
+                          <div class="prediction-message">
+                              <p><strong>Análisis:</strong> ${descripcion}</p>
+                              <p><strong>Recomendación:</strong> ${recomendacion}</p>
+                          </div>
+
+                          <div class="prediction-actions">
+                              <button class="btn-primary recalcular-prediccion" data-travelid="${travelId}">
+                                  🔄 Recalcular
+                              </button>
+                              <button class="btn-secondary usar-para-nuevo" data-travelid="${travelId}">
+                                  📝 Usar en Nuevo Análisis
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              `;
+
+              // Asignar eventos a los botones
+              document.querySelectorAll(".recalcular-prediccion").forEach(btn => {
+                  btn.addEventListener("click", () => {
+                      const travelId = btn.getAttribute("data-travelid");
+                      realizarPrediccion(travelId);
+                  });
+              });
+
+              document.querySelectorAll(".usar-para-nuevo").forEach(btn => {
+                  btn.addEventListener("click", () => {
+                      const travelId = btn.getAttribute("data-travelid");
+                      document.getElementById("travelId").value = travelId;
+                      document.getElementById("travelId").focus();
+                  });
+              });
+          }
+
+          function mostrarError(mensaje) {
+              const resultadoDiv = document.getElementById("resultado-prediccion");
+              if (!resultadoDiv) return;
+
+              resultadoDiv.innerHTML = `
+                  <div class="prediction-result prediction-error">
+                      <div class="prediction-header">
+                          <div class="prediction-icon">❌</div>
+                          <div class="prediction-title">
+                              <h3>ERROR EN PREDICCIÓN</h3>
+                              <p>No se pudo completar el análisis</p>
+                          </div>
+                      </div>
+                      <div class="prediction-body">
+                          <div class="error-message">
+                              <p>${mensaje}</p>
+                          </div>
+                          <div class="suggestions">
+                              <h4>Posibles soluciones:</h4>
+                              <ul>
+                                  <li>Verifica que el viaje tenga conductor asignado</li>
+                                  <li>Asegúrate de que el viaje tenga fecha de inicio (StartDate)</li>
+                                  <li>Confirma que el ID del viaje sea correcto</li>
+                                  <li>Intenta con un viaje diferente</li>
+                              </ul>
+                          </div>
+                          <div class="prediction-actions">
+                              <button class="btn-primary" onclick="document.getElementById('form-predict').dispatchEvent(new Event('submit'))">
+                                  🔄 Intentar Nuevamente
+                              </button>
+                              <button class="btn-secondary" onclick="cargarViajesParaPrediccion()">
+                                  📋 Ver Viajes Disponibles
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              `;
+          }
+      });
+
 
     // === CERRAR SESIÓN ===
     document.getElementById("logoutBtn").addEventListener("click", async (e) => {

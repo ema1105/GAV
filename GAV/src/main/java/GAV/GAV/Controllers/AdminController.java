@@ -87,6 +87,7 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllDrivers());
     }
 
+
     @PostMapping("/drivers")
     public ResponseEntity<?> registerDriver(@RequestBody Users driver) {
         try {

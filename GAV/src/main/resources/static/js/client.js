@@ -1,14 +1,3 @@
-/*// Al inicio de client.js - DEBUG TEMPORAL
-console.log('=== INICIANDO CLIENTE CON DEBUG ===');
-
-// Sobrescribir console.error para capturar más información
-const originalError = console.error;
-console.error = function(...args) {
-    originalError.apply(console, ['🚨 ERROR CAPTURADO:', ...args]);
-    // Puedes agregar aquí envío de errores a un servicio si lo deseas
-};
-*/
-
 const API_BASE = '/api/client';
 const PROFILE_API_BASE = '/api/client/profile';
 let map;

@@ -2,66 +2,83 @@ package GAV.GAV.DTO;
 
 import java.math.BigDecimal;
 import java.util.Date;
+
 public class TravelDriverResponse {
     private String id;
-    private int cantidadPasajeros;
-    private String estadoViaje;
-    private Date fechaSolicitud;
-    private Date fechaInicio;
-    private Date fechaFinalizacion;
-    private Date fechaCancelacion;
-    private String destinoNombre;
-    private ClientInfo cliente;
-    private BigDecimal precioFinal;
-    private String duracionViaje;
+    private int numberPassengers;
+    private String travelStatus;
+    private Date requestDate;
+    private Date startDate;
+    private Date endDate;
+    private Date cancellationDate;
+    private String destinationName;
+    private ClientInfo clientInfo;
+    private BigDecimal finalPrice;
+    private String travelDuration;
 
     public TravelDriverResponse() {}
 
-    public TravelDriverResponse(String id, int cantidadPasajeros, String estadoViaje,
-                                Date fechaSolicitud, Date fechaInicio, Date fechaFinalizacion,
-                                Date fechaCancelacion, String destinoNombre,
-                                ClientInfo cliente, BigDecimal precioFinal, String duracionViaje) {
+    public TravelDriverResponse(String id, int numberPassengers, String travelStatus,
+                                Date requestDate, Date startDate, Date endDate,
+                                Date cancellationDate, String destinationName,
+                                ClientInfo clientInfo, BigDecimal finalPrice, String travelDuration) {
         this.id = id;
-        this.cantidadPasajeros = cantidadPasajeros;
-        this.estadoViaje = estadoViaje;
-        this.fechaSolicitud = fechaSolicitud;
-        this.fechaInicio = fechaInicio;
-        this.fechaFinalizacion = fechaFinalizacion;
-        this.fechaCancelacion = fechaCancelacion;
-        this.destinoNombre = destinoNombre;
-        this.cliente = cliente;
-        this.precioFinal = precioFinal;
-        this.duracionViaje = duracionViaje;
+        this.numberPassengers = numberPassengers;
+        this.travelStatus = travelStatus;
+        this.requestDate = requestDate;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.cancellationDate = cancellationDate;
+        this.destinationName = destinationName;
+        this.clientInfo = clientInfo;
+        this.finalPrice = finalPrice;
+        this.travelDuration = travelDuration;
     }
 
     public static class ClientInfo {
-        private String nombreCompleto;
-        private String telefono;
+        private String fullName;
+        private String phone;
 
-        public ClientInfo(String nombreCompleto, String telefono) {
-            this.nombreCompleto = nombreCompleto;
-            this.telefono = telefono;
+        public ClientInfo(String fullName, String phone) {
+            this.fullName = fullName;
+            this.phone = phone;
         }
 
-        public String getNombreCompleto() {
-            return nombreCompleto;
-        }
 
-        public String getTelefono() {
-            return telefono;
-        }
+        public String getFullName() { return fullName; }
+        public String getPhone() { return phone; }
     }
 
-    // Getters
     public String getId() { return id; }
-    public int getCantidadPasajeros() { return cantidadPasajeros; }
-    public String getEstadoViaje() { return estadoViaje; }
-    public Date getFechaSolicitud() { return fechaSolicitud; }
-    public Date getFechaInicio() { return fechaInicio; }
-    public Date getFechaFinalizacion() { return fechaFinalizacion; }
-    public Date getFechaCancelacion() { return fechaCancelacion; }
-    public String getDestinoNombre() { return destinoNombre; }
-    public ClientInfo getCliente() { return cliente; }
-    public BigDecimal getPrecioFinal() { return precioFinal; }
-    public String getDuracionViaje() { return duracionViaje; }
+    public void setId(String id) { this.id = id; }
+
+    public int getNumberPassengers() { return numberPassengers; }
+    public void setNumberPassengers(int numberPassengers) { this.numberPassengers = numberPassengers; }
+
+    public String getTravelStatus() { return travelStatus; }
+    public void setTravelStatus(String travelStatus) { this.travelStatus = travelStatus; }
+
+    public Date getRequestDate() { return requestDate; }
+    public void setRequestDate(Date requestDate) { this.requestDate = requestDate; }
+
+    public Date getStartDate() { return startDate; }
+    public void setStartDate(Date startDate) { this.startDate = startDate; }
+
+    public Date getEndDate() { return endDate; }
+    public void setEndDate(Date endDate) { this.endDate = endDate; }
+
+    public Date getCancellationDate() { return cancellationDate; }
+    public void setCancellationDate(Date cancellationDate) { this.cancellationDate = cancellationDate; }
+
+    public String getDestinationName() { return destinationName; }
+    public void setDestinationName(String destinationName) { this.destinationName = destinationName; }
+
+    public ClientInfo getClientInfo() { return clientInfo; }
+    public void setClientInfo(ClientInfo clientInfo) { this.clientInfo = clientInfo; }
+
+    public BigDecimal getFinalPrice() { return finalPrice; }
+    public void setFinalPrice(BigDecimal finalPrice) { this.finalPrice = finalPrice; }
+
+    public String getTravelDuration() { return travelDuration; }
+    public void setTravelDuration(String travelDuration) { this.travelDuration = travelDuration; }
 }

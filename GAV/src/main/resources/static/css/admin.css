@@ -3,7 +3,7 @@
     --beige-medium: #e8dfd0;
     --beige-dark: #d6ccb8;
     --beige-darker: #c4b7a1;
-    --black: #e8dfd0;
+    --black: #000000;
     --black-medium: #2d2d2d;
     --black-light: #404040;
     --white: #ffffff;
@@ -29,7 +29,7 @@ body {
 /* Sidebar */
 .sidebar {
   width: 260px;
-  background: linear-gradient(135deg, var(--black-medium) 0%, var(--black) 100%);
+  background: #000000;
   color: white;
   height: 100vh;
   position: fixed;
@@ -74,7 +74,7 @@ body {
 .menu-item.active {
   background-color: rgba(255, 255, 255, 0.08);
   color: white;
-  border-left-color: #4CAF50;
+  border-left-color: #00ff0a;
 }
 
 .menu-item .icon {
@@ -943,8 +943,8 @@ body {
 /* Estilos para modo oscuro (opcional) */
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: var(--black);
-    color: #e0e0e0;
+    background-color: var(--beige-light);
+    color: #000000;
   }
 
   .card {

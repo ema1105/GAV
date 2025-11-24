@@ -1,1011 +1,1200 @@
-document.addEventListener('DOMContentLoaded', function() {
+// driver.js - VERSIÓN CON PAGINACIÓN EN FRONTEND
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiZW1tYW51ZWxtb3JpbGxvcCIsImEiOiJjbWhtaHdmd2UwYnh6MnBxNHQ1eHh4bHNqIn0.o6kiz8bjWDxwUqKgnQekfg';
 
-const content = document.getElementById("main-content");
-const menuItems = document.querySelectorAll('.menu-item');
+// Variables globales
 let driverId = null;
-let currentTravels = [];
-let currentRequests = [];
-let currentActiveTravel = null;
+let currentDriver = null;
+let map = null;
+let activeTravel = null;
+let currentSection = 'inicio';
 
-// === FUNCIONES BASE ===
-function setActiveMenuItem(activeItem) {
-    menuItems.forEach(item => item.classList.remove('active'));
-    activeItem.classList.add('active');
+// Para paginación en frontend
+let allTravelHistory = [];
+let currentHistoryPage = 0;
+const itemsPerPage = 10;
+let currentSearchTerm = '';
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Inicializando aplicación conductor...');
+    
+    // Esperar a que PanelManager esté listo
+    if (window.panelManager) {
+        initializeWithPanelManager();
+    } else {
+        document.addEventListener('panelManagerReady', initializeWithPanelManager);
+    }
+});
+
+async function initializeWithPanelManager() {
+    console.log('Inicializando con PanelManager...');
+    
+    try {
+        await loadDriverId();
+        await loadDriverProfile();
+        initializeNavigation();
+        setupEventListeners();
+        
+        // Escuchar cambios de panel
+        document.addEventListener('panelChanged', handlePanelChange);
+        
+        // Cargar contenido inicial
+        loadSection('inicio');
+    } catch (error) {
+        showNotification('Error al inicializar la aplicación: ' + error.message, 'error');
+    }
 }
 
+function initializeNavigation() {
+    const menuItems = document.querySelectorAll('.menu-item[data-section]');
+    
+    menuItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Remover active de todos los items
+            menuItems.forEach(i => i.classList.remove('active'));
+            // Agregar active al item clickeado
+            this.classList.add('active');
+            
+            const sectionId = this.getAttribute('data-section');
+            if (window.panelManager) {
+                window.panelManager.mostrarPanel(sectionId);
+            }
+        });
+    });
+}
+
+function handlePanelChange(event) {
+    const panelId = event.detail.panelId;
+    console.log('Panel cambiado a:', panelId);
+    
+    // Pequeño delay para permitir que el DOM se actualice
+    setTimeout(() => {
+        loadSection(panelId);
+    }, 50);
+}
+
+// Configurar event listeners adicionales
+function setupEventListeners() {
+    // Event listeners adicionales si son necesarios
+}
+
+// Cargar ID del conductor
+async function loadDriverId() {
+  try {
+        const response = await fetch('/api/driver/my-id', {
+            method: 'GET',
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error("Sesión expirada o no autenticado");
+        }
+
+        const data = await response.json();
+        driverId = data.driverId;
+
+        console.log("Driver ID cargado:", driverId);
+    } catch (error) {
+        console.error('Error cargando driver ID:', error);
+        window.location.href = "/login";  // OPCIONAL
+        throw error;
+    }
+}
+
+// Cargar perfil del conductor
 async function loadDriverProfile() {
     try {
-        const res = await fetch("/driver/profile");
-        if (res.ok) {
-            const profile = await res.json();
-            driverId = await getDriverIdFromProfile(profile);
-            document.querySelector('.content-header h1').textContent = `Bienvenido, ${profile.fullname || 'Conductor'}`;
-        }
-    } catch (err) {
-        console.error("Error al obtener perfil:", err);
-        driverId = 'default-driver-id';
+         const response = await fetch('/api/driver/profile', {
+             method: 'GET',
+             credentials: 'include'
+         });
+
+         if (!response.ok) throw new Error("Sesión no válida");
+
+         const data = await response.json();
+         currentDriver = data;
+
+         updateWelcomeMessage();
+     } catch (error) {
+         console.error('Error cargando perfil:', error);
+     }
+ }
+
+// Actualizar mensaje de bienvenida
+function updateWelcomeMessage() {
+    const welcomeElement = document.getElementById('driverName');
+    if (welcomeElement && currentDriver) {
+        welcomeElement.textContent = currentDriver.fullname || 'Conductor';
     }
 }
 
-async function getDriverIdFromProfile(profile) {
-    if (profile.id) return profile.id;
-    if (!profile.username) {
-        console.error("EL PERFIL NO TIENE USERNAME:", profile);
-        return "default-driver-id";
+// Navegación entre secciones
+function loadSection(section) {
+    currentSection = section;
+    
+    // Obtener el contenedor específico de la sección
+    let container;
+    switch(section) {
+        case 'inicio':
+            container = document.getElementById('inicio-content');
+            if (container) loadInicio(container);
+            break;
+        case 'solicitudes':
+            container = document.getElementById('solicitudes-content');
+            if (container) loadSolicitudes(container);
+            break;
+        case 'viajes':
+            container = document.getElementById('viajes-content');
+            if (container) loadViajes(container);
+            break;
+        case 'ruta':
+            container = document.getElementById('ruta-content');
+            if (container) loadRuta(container);
+            break;
+        case 'historial':
+            container = document.getElementById('historial-content');
+            if (container) loadHistorial(container);
+            break;
+        case 'perfil':
+            container = document.getElementById('perfil-content');
+            if (container) loadPerfil(container);
+            break;
     }
-    try {
-        const driverRes = await fetch(`/api/driver/by-username/${profile.username}`);
-        if (driverRes.ok) {
-            const driver = await driverRes.json();
-            return driver.id;
-        }
-    } catch (err) {
-        console.error("Error obteniendo ID del conductor:", err);
-    }
-    return 'default-driver-id';
 }
 
-// === MÓDULO: INICIO ===
-document.getElementById("btn-inicio").addEventListener("click", (e) => {
-    setActiveMenuItem(e.currentTarget);
-    content.innerHTML = `
-        <div class="content-header">
-            <h2>Inicio</h2>
-            <p>Resumen de tus actividades recientes.</p>
-        </div>
+// ==================== SECCIÓN INICIO ====================
+function loadInicio(container) {
+    if (!container) {
+        container = document.getElementById('inicio-content');
+    }
+    if (!container) return;
+    
+    container.innerHTML = `
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>Viajes del Día</h3>
-                <div class="stat-number" id="stats-hoy">0</div>
-                <p>Completados hoy</p>
+                <h3>Solicitudes Pendientes</h3>
+                <div class="stat-number" id="stats-pending">0</div>
+                <p>Esperando tu respuesta</p>
             </div>
             <div class="stat-card">
-                <h3>En Curso</h3>
-                <div class="stat-number" id="stats-curso">0</div>
-                <p>Viajes activos</p>
+                <h3>Viajes Activos</h3>
+                <div class="stat-number" id="stats-active">0</div>
+                <p>En curso o asignados</p>
             </div>
             <div class="stat-card">
-                <h3>Ganancias</h3>
-                <div class="stat-number" id="stats-ganancias">$0</div>
-                <p>Total hoy</p>
+                <h3>Viajes Completados</h3>
+                <div class="stat-number" id="stats-completed">0</div>
+                <p>Historial total</p>
+            </div>
+            <div class="stat-card">
+                <h3>Ganancias del Día</h3>
+                <div class="stat-number" id="stats-earnings">$0</div>
+                <p>Total de hoy</p>
             </div>
         </div>
+
         <div class="action-note">
-            💡 Revisa tus viajes asignados en la sección "Viajes Asignados"
+            💡 <strong>Recuerda:</strong> Revisa frecuentemente las solicitudes de viaje y mantén actualizada tu disponibilidad.
         </div>
     `;
+
     loadDashboardStats();
-});
+}
 
 async function loadDashboardStats() {
     try {
-        const res = await fetch(`/api/driver/${driverId}/travels`);
-        if (res.ok) {
-            const travels = await res.json();
-            const hoy = new Date().toDateString();
+        const [requests, travels, history, earnings] = await Promise.all([
+            fetch(`/api/driver/${driverId}/travel-requests`).then(res => res.json()),
+            fetch(`/api/driver/${driverId}/travels`).then(res => res.json()),
+            fetch(`/api/driver/${driverId}/history`).then(res => res.json()),
+            fetch(`/api/driver/${driverId}/daily-earnings`).then(res => res.json())
+        ]);
 
-            const viajesHoy = travels.filter(t =>
-                new Date(t.fechaSolicitud).toDateString() === hoy &&
-                t.estadoViaje === 'FINISHED'
-            ).length;
-
-            const enCurso = travels.filter(t =>
-                t.estadoViaje === 'IN_PROGRESS'
-            ).length;
-
-            const gananciasHoy = travels.filter(t =>
-                new Date(t.fechaSolicitud).toDateString() === hoy &&
-                t.estadoViaje === 'FINISHED'
-            ).reduce((sum, t) => sum + (t.precioFinal ? Number(t.precioFinal) : 0), 0);
-
-            document.getElementById('stats-hoy').textContent = viajesHoy;
-            document.getElementById('stats-curso').textContent = enCurso;
-            document.getElementById('stats-ganancias').textContent = `$${gananciasHoy}`;
-        }
-    } catch (err) {
-        console.error("Error cargando estadísticas:", err);
+        document.getElementById('stats-pending').textContent = Array.isArray(requests) ? requests.length : 0;
+        document.getElementById('stats-active').textContent = Array.isArray(travels) ? travels.length : 0;
+        document.getElementById('stats-completed').textContent = Array.isArray(history) ? history.length : 0;
+        document.getElementById('stats-earnings').textContent = earnings.dailyEarnings ? 
+            `$${earnings.dailyEarnings.toLocaleString('es-CO', {minimumFractionDigits: 0, maximumFractionDigits: 0})}` : '$0';
+    } catch (error) {
+        console.error('Error cargando estadísticas:', error);
     }
 }
 
-// === MÓDULO: VIAJE ACTIVO ===//
-document.getElementById("btn-ruta").addEventListener("click", async (e) => {
-    setActiveMenuItem(e.currentTarget);
-    await loadActiveTravel();
-});
-
-async function loadActiveTravel() {
-    content.innerHTML = `
-        <div class="content-header">
-            <h2>Viaje Activo</h2>
-            <p>Sigue tu ruta en tiempo real y gestiona el viaje en curso.</p>
+// ==================== SECCIÓN SOLICITUDES ====================
+function loadSolicitudes(container) {
+    if (!container) {
+        container = document.getElementById('solicitudes-content');
+    }
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="action-note">
+            📋 <strong>Instrucciones:</strong> Revisa cada viaje asignado y decide si aceptar o rechazar. Si aceptas, podrás iniciarlo cuando estés listo.
         </div>
-        <div id="active-travel-view"></div>
+
+        <div id="solicitudes-container">
+            <div class="loading">Cargando solicitudes...</div>
+        </div>
     `;
 
-    const view = document.getElementById("active-travel-view");
+    loadTravelRequests();
+}
+
+async function loadTravelRequests() {
+    const container = document.getElementById('solicitudes-container');
 
     try {
-        // Buscar viaje activo (IN_PROGRESS)
-        const res = await fetch(`/api/driver/${driverId}/travels`);
-        if (!res.ok) throw new Error("Error al obtener viajes");
+        const response = await fetch(`/api/driver/${driverId}/travel-requests`);
+        const data = await response.json();
 
-        const travels = await res.json();
-        currentActiveTravel = travels.find(t => t.estadoViaje === 'IN_PROGRESS');
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al cargar solicitudes');
+        }
 
-        if (!currentActiveTravel) {
-            view.innerHTML = `
+        if (!data.length) {
+            container.innerHTML = `
                 <div class="empty-state">
-                    <div class="icon">🚗</div>
-                    <h3>No tienes un viaje activo</h3>
-                    <p>Cuando inicies un viaje, aparecerá aquí con el mapa y la ruta completa</p>
-                    <div class="action-note" style="margin-top: 20px;">
-                        💡 Ve a "Viajes Asignados" para iniciar un viaje
-                    </div>
+                    <div class="icon">📋</div>
+                    <h3>No hay solicitudes pendientes</h3>
+                    <p>Cuando recibas nuevas solicitudes de viaje, aparecerán aquí.</p>
                 </div>
             `;
             return;
         }
 
-        const clienteNombre = currentActiveTravel.cliente ? currentActiveTravel.cliente.nombreCompleto : 'Cliente no disponible';
-        const clienteTelefono = currentActiveTravel.cliente ? currentActiveTravel.cliente.telefono : 'No disponible';
-
-        view.innerHTML = `
-            <div class="active-travel-container">
+        container.innerHTML = data.map(travel => `
+            <div class="travel-card">
                 <div class="travel-header">
-                    <h2>Viaje a ${currentActiveTravel.destinoNombre}</h2>
-                    <span class="status-badge status-in_progress">En Curso</span>
+                    <h3>${travel.destinationName || 'Destino no especificado'}</h3>
+                    <span class="status-badge status-assigned">ASIGNADO</span>
                 </div>
 
-                <div class="route-info">
-                    <div class="route-point start">
-                        <strong>📍 Origen</strong>
-                        <p>Recogiendo a ${clienteNombre}</p>
-                        <small>📞 ${clienteTelefono}</small>
+                <div class="travel-info">
+                    <div class="info-row">
+                        <span class="info-label">Pasajeros:</span>
+                        <span class="info-value">${travel.numberPassengers}</span>
                     </div>
-                    <div class="route-point end">
-                        <strong>🎯 Destino</strong>
-                        <p>${currentActiveTravel.destinoNombre}</p>
-                        <small>${currentActiveTravel.destinoCoordenadas || 'Coordenadas no disponibles'}</small>
+                    <div class="info-row">
+                        <span class="info-label">Fecha solicitud:</span>
+                        <span class="info-value">${formatDate(travel.requestDate)}</span>
                     </div>
-                </div>
-
-                <div class="travel-timer" id="travel-timer">
-                    Tiempo transcurrido: 00:00:00
-                </div>
-
-                <div class="live-map" id="live-map-container">
-                    <div style="height: 100%; display: flex; align-items: center; justify-content: center; background: #e9ecef; color: #6c757d;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 3em;">🗺️</div>
-                            <h3>Mapa en Tiempo Real</h3>
-                            <p>Ruta hacia ${currentActiveTravel.destinoNombre}</p>
-                            <small>Integración con Google Maps/Mapbox aquí</small>
-                        </div>
+                    <div class="info-row">
+                        <span class="info-label">Precio:</span>
+                        <span class="info-value">$${travel.finalPrice ? travel.finalPrice.toLocaleString() : 'Por calcular'}</span>
                     </div>
                 </div>
 
-                <div class="live-info-panel">
-                    <h4>📊 Información del Viaje</h4>
-                    <div class="travel-info">
-                        <div class="info-row">
-                            <span class="info-label">Pasajeros:</span>
-                            <span class="info-value">${currentActiveTravel.cantidadPasajeros} personas</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Valor del viaje:</span>
-                            <span class="info-value">$${currentActiveTravel.precioFinal || '0'} COP</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Iniciado:</span>
-                            <span class="info-value">${new Date(currentActiveTravel.fechaInicio || new Date()).toLocaleString('es-CO')}</span>
-                        </div>
-                    </div>
+                ${travel.clientInfo ? `
+                <div class="client-info-section">
+                    <div class="client-name">👤 ${travel.clientInfo.fullName}</div>
+                    <div class="client-phone">📞 ${travel.clientInfo.phoneNumber}</div>
                 </div>
+                ` : ''}
 
                 <div class="travel-actions">
-                    <button class="btn-finish" onclick="finishTravel('${currentActiveTravel.id}')" style="flex: 1;">
-                        🏁 Finalizar Viaje
+                    <button class="btn-accept" onclick="acceptTravelRequest('${travel.id}')">
+                        ✅ Aceptar Viaje
                     </button>
-                    <button class="btn-start" onclick="showEmergencyOptions()" style="flex: 0.5;">
-                        🆘 Emergencia
+                    <button class="btn-reject" onclick="rejectTravelRequest('${travel.id}')">
+                        ❌ Rechazar Viaje
                     </button>
-                </div>
-
-                <div class="action-note">
-                    🎯 Mantén esta pantalla activa durante el viaje para seguir la ruta en tiempo real
                 </div>
             </div>
-        `;
+        `).join('');
 
-        // Iniciar temporizador
-        startTravelTimer();
-
-    } catch (err) {
-        console.error("Error cargando viaje activo:", err);
-        view.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">❌</div>
-                <h3>Error al cargar el viaje activo</h3>
-                <p>Intenta nuevamente más tarde</p>
+    } catch (error) {
+        container.innerHTML = `
+            <div class="error-state">
+                <h3>Error al cargar solicitudes</h3>
+                <p>${error.message}</p>
+                <button onclick="loadTravelRequests()">Reintentar</button>
             </div>
         `;
     }
 }
 
-function startTravelTimer() {
-    const startTime = currentActiveTravel?.fechaInicio ? new Date(currentActiveTravel.fechaInicio) : new Date();
-    const timerElement = document.getElementById('travel-timer');
+// ==================== SECCIÓN VIAJES ====================
+function loadViajes(container) {
+    if (!container) {
+        container = document.getElementById('viajes-content');
+    }
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div id="viajes-container">
+            <div class="loading">Cargando viajes...</div>
+        </div>
+    `;
 
+    loadAssignedTravels();
+}
+
+async function loadAssignedTravels() {
+    const container = document.getElementById('viajes-container');
+
+    try {
+        const response = await fetch(`/api/driver/${driverId}/travels`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al cargar viajes');
+        }
+
+        if (!data.length) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🚗</div>
+                    <h3>No hay viajes asignados</h3>
+                    <p>Cuando te asignen viajes, aparecerán aquí para que los gestiones.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = data.map(travel => {
+            const statusClass = `status-${travel.travelStatus.toLowerCase()}`;
+            let actionButton = '';
+
+            if (travel.travelStatus === 'ACCEPTED') {
+                actionButton = `<button class="btn-start" onclick="startTravel('${travel.id}')">▶️ Iniciar Viaje</button>`;
+            } else if (travel.travelStatus === 'IN_PROGRESS') {
+                actionButton = `<button class="btn-finish" onclick="finishTravel('${travel.id}')">🏁 Finalizar Viaje</button>`;
+            }
+
+            return `
+                <div class="travel-card">
+                    <div class="travel-header">
+                        <h3>${travel.destinationName || 'Destino no especificado'}</h3>
+                        <span class="status-badge ${statusClass}">${travel.travelStatus}</span>
+                    </div>
+
+                    <div class="travel-info">
+                        <div class="info-row">
+                            <span class="info-label">Pasajeros:</span>
+                            <span class="info-value">${travel.numberPassengers}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Estado:</span>
+                            <span class="info-value">${getStatusText(travel.travelStatus)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Precio:</span>
+                            <span class="info-value">$${travel.finalPrice ? travel.finalPrice.toLocaleString() : 'N/A'}</span>
+                        </div>
+                        ${travel.startDate ? `
+                        <div class="info-row">
+                            <span class="info-label">Inicio:</span>
+                            <span class="info-value">${formatDate(travel.startDate)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    ${travel.clientInfo ? `
+                    <div class="client-info-section">
+                        <div class="client-name">👤 ${travel.clientInfo.fullName}</div>
+                        <div class="client-phone">📞 ${travel.clientInfo.phoneNumber}</div>
+                    </div>
+                    ` : ''}
+
+                    ${actionButton ? `
+                    <div class="travel-actions">
+                        ${actionButton}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        container.innerHTML = `
+            <div class="error-state">
+                <h3>Error al cargar viajes</h3>
+                <p>${error.message}</p>
+                <button onclick="loadAssignedTravels()">Reintentar</button>
+            </div>
+        `;
+    }
+}
+
+// ==================== SECCIÓN RUTA ====================
+function loadRuta(container) {
+    if (!container) {
+        container = document.getElementById('ruta-content');
+    }
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div id="ruta-container">
+            <div class="loading">Cargando información de ruta...</div>
+        </div>
+    `;
+
+    loadActiveTravelForMap();
+}
+
+async function loadActiveTravelForMap() {
+    const container = document.getElementById('ruta-container');
+
+    try {
+        const response = await fetch(`/api/driver/${driverId}/travels`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al cargar viajes');
+        }
+
+        // Buscar viaje activo (IN_PROGRESS o ACCEPTED)
+        const activeTravel = data.find(travel =>
+            travel.travelStatus === 'IN_PROGRESS' || travel.travelStatus === 'ACCEPTED'
+        );
+
+        if (!activeTravel) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🗺️</div>
+                    <h3>No hay viaje activo</h3>
+                    <p>Cuando inicies un viaje, podrás visualizar la ruta aquí.</p>
+                    <button onclick="loadSection('viajes')" style="margin-top: 15px;">Ver Viajes Asignados</button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="active-travel-container">
+                <div class="travel-header">
+                    <h3>${activeTravel.destinationName}</h3>
+                    <span class="status-badge status-${activeTravel.travelStatus.toLowerCase()}">
+                        ${activeTravel.travelStatus}
+                    </span>
+                </div>
+
+                <div class="route-info">
+                    <div class="route-point start">
+                        <strong>Origen:</strong><br>
+                        Hotel Estelar Manzanillo del Mar
+                    </div>
+                    <div class="route-point end">
+                        <strong>Destino:</strong><br>
+                        ${activeTravel.destinationName}
+                    </div>
+                </div>
+
+                <div class="live-map" id="map"></div>
+
+                ${activeTravel.travelStatus === 'IN_PROGRESS' ? `
+                <div class="travel-timer">
+                    <div>⏱️ Tiempo transcurrido:</div>
+                    <div id="travel-timer">00:00:00</div>
+                </div>
+                ` : ''}
+
+                <div class="travel-actions">
+                    ${activeTravel.travelStatus === 'ACCEPTED' ?
+                        `<button class="btn-start" onclick="startTravel('${activeTravel.id}')">▶️ Iniciar Viaje</button>` :
+                        activeTravel.travelStatus === 'IN_PROGRESS' ?
+                        `<button class="btn-finish" onclick="finishTravel('${activeTravel.id}')">🏁 Finalizar Viaje</button>` : ''
+                    }
+                </div>
+            </div>
+        `;
+
+        // Inicializar mapa
+        initializeMap(activeTravel.destinationName);
+
+        // Iniciar timer si el viaje está en progreso
+        if (activeTravel.travelStatus === 'IN_PROGRESS' && activeTravel.startDate) {
+            startTravelTimer(new Date(activeTravel.startDate));
+        }
+
+    } catch (error) {
+        container.innerHTML = `
+            <div class="error-state">
+                <h3>Error al cargar información de ruta</h3>
+                <p>${error.message}</p>
+                <button onclick="loadActiveTravelForMap()">Reintentar</button>
+            </div>
+        `;
+    }
+}
+
+// ==================== SECCIÓN HISTORIAL ====================
+function loadHistorial(container) {
+    if (!container) {
+        container = document.getElementById('historial-content');
+    }
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Buscar por destino..." onkeyup="handleSearch()">
+            <button onclick="searchHistory()">🔍 Buscar</button>
+        </div>
+
+        <div id="historial-container">
+            <div class="loading">Cargando historial...</div>
+        </div>
+
+        <div class="pagination" id="pagination-controls"></div>
+    `;
+
+    loadAllTravelHistory();
+}
+
+// Cargar todo el historial (paginación en frontend)
+async function loadAllTravelHistory() {
+    const container = document.getElementById('historial-container');
+
+    try {
+        container.innerHTML = '<div class="loading">Cargando historial completo...</div>';
+
+        const response = await fetch(`/api/driver/${driverId}/history`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al cargar historial');
+        }
+
+        allTravelHistory = Array.isArray(data) ? data : [];
+        currentHistoryPage = 0;
+
+        if (!allTravelHistory.length) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">📜</div>
+                    <h3>No hay viajes en el historial</h3>
+                    <p>Cuando completes viajes, aparecerán aquí en tu historial.</p>
+                </div>
+            `;
+            document.getElementById('pagination-controls').innerHTML = '';
+            return;
+        }
+
+        // Aplicar búsqueda si existe
+        let filteredHistory = allTravelHistory;
+        if (currentSearchTerm) {
+            filteredHistory = allTravelHistory.filter(travel =>
+                travel.destinationName?.toLowerCase().includes(currentSearchTerm.toLowerCase()) ||
+                travel.clientInfo?.fullName?.toLowerCase().includes(currentSearchTerm.toLowerCase())
+            );
+        }
+
+        // Paginar resultados
+        const startIndex = currentHistoryPage * itemsPerPage;
+        const paginatedHistory = filteredHistory.slice(startIndex, startIndex + itemsPerPage);
+        const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
+
+        // Renderizar viajes
+        container.innerHTML = paginatedHistory.map(travel => {
+            const statusClass = `status-${travel.travelStatus.toLowerCase()}`;
+
+            return `
+                <div class="travel-card">
+                    <div class="travel-header">
+                        <h3>${travel.destinationName || 'Destino no especificado'}</h3>
+                        <span class="status-badge ${statusClass}">${travel.travelStatus}</span>
+                    </div>
+
+                    <div class="travel-info">
+                        <div class="info-row">
+                            <span class="info-label">Pasajeros:</span>
+                            <span class="info-value">${travel.numberPassengers}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Solicitado:</span>
+                            <span class="info-value">${formatDate(travel.requestDate)}</span>
+                        </div>
+                        ${travel.startDate ? `
+                        <div class="info-row">
+                            <span class="info-label">Inicio:</span>
+                            <span class="info-value">${formatDate(travel.startDate)}</span>
+                        </div>
+                        ` : ''}
+                        ${travel.endDate ? `
+                        <div class="info-row">
+                            <span class="info-label">Fin:</span>
+                            <span class="info-value">${formatDate(travel.endDate)}</span>
+                        </div>
+                        ` : ''}
+                        ${travel.travelDuration ? `
+                        <div class="info-row">
+                            <span class="info-label">Duración:</span>
+                            <span class="info-value">${travel.travelDuration}</span>
+                        </div>
+                        ` : ''}
+                        <div class="info-row">
+                            <span class="info-label">Precio:</span>
+                            <span class="info-value cost-badge">$${travel.finalPrice ? travel.finalPrice.toLocaleString() : 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    ${travel.clientInfo ? `
+                    <div class="client-info-section">
+                        <div class="client-name">👤 ${travel.clientInfo.fullName}</div>
+                        <div class="client-phone">📞 ${travel.clientInfo.phoneNumber}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+        // Renderizar paginación
+        renderPagination(totalPages, currentHistoryPage);
+
+    } catch (error) {
+        container.innerHTML = `
+            <div class="error-state">
+                <h3>Error al cargar historial</h3>
+                <p>${error.message}</p>
+                <button onclick="loadAllTravelHistory()">Reintentar</button>
+            </div>
+        `;
+    }
+}
+
+// ==================== SECCIÓN PERFIL ====================
+function loadPerfil(container) {
+    if (!container) {
+        container = document.getElementById('perfil-content');
+    }
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="profile-form-section">
+            <h3>Información Personal</h3>
+            <form id="profile-form" class="perfil-form">
+                <div class="form-group">
+                    <label for="fullname">Nombre *</label>
+                    <input type="text" id="fullname" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastname">Apellido *</label>
+                    <input type="text" id="lastname" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="number">Teléfono *</label>
+                    <input type="text" id="number" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" class="form-control readonly-field" readonly>
+                </div>
+                <button type="submit" class="btn-save">💾 Guardar Cambios</button>
+            </form>
+        </div>
+
+        <div class="profile-form-section">
+            <h3>Información del Vehículo</h3>
+            <div id="vehicle-info">
+                <div class="loading">Cargando información del vehículo...</div>
+            </div>
+        </div>
+    `;
+
+    loadProfileData();
+    loadVehicleInfo();
+    setupProfileForm();
+}
+
+// ==================== FUNCIONES DE PAGINACIÓN EN FRONTEND ====================
+function renderPagination(totalPages, currentPage) {
+    const pagination = document.getElementById('pagination-controls');
+
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Botón anterior
+    if (currentPage > 0) {
+        html += `<button class="page-btn" onclick="changePage(${currentPage - 1})">‹ Anterior</button>`;
+    }
+
+    // Páginas
+    const startPage = Math.max(0, currentPage - 2);
+    const endPage = Math.min(totalPages - 1, currentPage + 2);
+
+    for (let i = startPage; i <= endPage; i++) {
+        if (i === currentPage) {
+            html += `<button class="page-btn active">${i + 1}</button>`;
+        } else {
+            html += `<button class="page-btn" onclick="changePage(${i})">${i + 1}</button>`;
+        }
+    }
+
+    // Botón siguiente
+    if (currentPage < totalPages - 1) {
+        html += `<button class="page-btn" onclick="changePage(${currentPage + 1})">Siguiente ›</button>`;
+    }
+
+    pagination.innerHTML = html;
+}
+
+function changePage(page) {
+    currentHistoryPage = page;
+    renderCurrentPage();
+}
+
+function renderCurrentPage() {
+    const container = document.getElementById('historial-container');
+
+    // Aplicar búsqueda si existe
+    let filteredHistory = allTravelHistory;
+    if (currentSearchTerm) {
+        filteredHistory = allTravelHistory.filter(travel =>
+            travel.destinationName?.toLowerCase().includes(currentSearchTerm.toLowerCase()) ||
+            travel.clientInfo?.fullName?.toLowerCase().includes(currentSearchTerm.toLowerCase())
+        );
+    }
+
+    const startIndex = currentHistoryPage * itemsPerPage;
+    const paginatedHistory = filteredHistory.slice(startIndex, startIndex + itemsPerPage);
+    const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
+
+    container.innerHTML = paginatedHistory.map(travel => {
+        const statusClass = `status-${travel.travelStatus.toLowerCase()}`;
+
+        return `
+            <div class="travel-card">
+                <div class="travel-header">
+                    <h3>${travel.destinationName || 'Destino no especificado'}</h3>
+                    <span class="status-badge ${statusClass}">${travel.travelStatus}</span>
+                </div>
+
+                <div class="travel-info">
+                    <div class="info-row">
+                        <span class="info-label">Pasajeros:</span>
+                        <span class="info-value">${travel.numberPassengers}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Solicitado:</span>
+                        <span class="info-value">${formatDate(travel.requestDate)}</span>
+                    </div>
+                    ${travel.startDate ? `
+                    <div class="info-row">
+                        <span class="info-label">Inicio:</span>
+                        <span class="info-value">${formatDate(travel.startDate)}</span>
+                    </div>
+                    ` : ''}
+                    ${travel.endDate ? `
+                    <div class="info-row">
+                        <span class="info-label">Fin:</span>
+                        <span class="info-value">${formatDate(travel.endDate)}</span>
+                    </div>
+                    ` : ''}
+                    ${travel.travelDuration ? `
+                    <div class="info-row">
+                        <span class="info-label">Duración:</span>
+                        <span class="info-value">${travel.travelDuration}</span>
+                    </div>
+                    ` : ''}
+                    <div class="info-row">
+                        <span class="info-label">Precio:</span>
+                        <span class="info-value cost-badge">$${travel.finalPrice ? travel.finalPrice.toLocaleString() : 'N/A'}</span>
+                    </div>
+                </div>
+
+                ${travel.clientInfo ? `
+                <div class="client-info-section">
+                    <div class="client-name">👤 ${travel.clientInfo.fullName}</div>
+                    <div class="client-phone">📞 ${travel.clientInfo.phoneNumber}</div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+
+    renderPagination(totalPages, currentHistoryPage);
+}
+
+// ==================== FUNCIONES DE UTILIDAD ====================
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('es-ES');
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'REQUESTED': 'Solicitado',
+        'ASSIGNED': 'Asignado',
+        'ACCEPTED': 'Aceptado',
+        'IN_PROGRESS': 'En Progreso',
+        'FINISHED': 'Finalizado',
+        'CANCELLED': 'Cancelado',
+        'REJECTED': 'Rechazado'
+    };
+    return statusMap[status] || status;
+}
+
+function startTravelTimer(startDate) {
     function updateTimer() {
         const now = new Date();
-        const diff = now - startTime;
-
+        const diff = now - startDate;
         const hours = Math.floor(diff / 3600000);
         const minutes = Math.floor((diff % 3600000) / 60000);
         const seconds = Math.floor((diff % 60000) / 1000);
 
-        timerElement.textContent = `Tiempo transcurrido: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('travel-timer').textContent =
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
     updateTimer();
     setInterval(updateTimer, 1000);
 }
 
-function showEmergencyOptions() {
-    alert("🚨 Opciones de Emergencia:\n\n• 📞 Llamar a soporte: 123-456-7890\n• 🚓 Contactar autoridades\n• ❌ Reportar problema\n\n¿Necesitas ayuda inmediata?");
+// ==================== BÚSQUEDA ====================
+function handleSearch() {
+    const searchInput = document.getElementById('search-input');
+    currentSearchTerm = searchInput.value;
 }
 
-// === MÓDULO: SOLICITUDES PENDIENTES ===
-document.getElementById("btn-solicitudes").addEventListener("click", async (e) => {
-    setActiveMenuItem(e.currentTarget);
-    await loadTravelRequests();
-});
+function searchHistory() {
+    currentHistoryPage = 0;
+    renderCurrentPage();
+}
 
-async function loadTravelRequests() {
-    content.innerHTML = `
-        <div class="content-header">
-            <h2>Solicitudes de Viaje</h2>
-            <p>Gestiona las nuevas solicitudes asignadas a ti.</p>
-        </div>
-        <div id="requests-list"></div>
-    `;
-
-    const lista = document.getElementById("requests-list");
-
+// ==================== FUNCIONES DE ACCIÓN ====================
+async function acceptTravelRequest(travelId) {
     try {
-        const res = await fetch(`/api/driver/${driverId}/travel-requests`);
-        if (!res.ok) throw new Error("Error al obtener solicitudes");
-        const data = await res.json();
-        currentRequests = data;
+        const response = await fetch(`/api/driver/travels/${travelId}/accept`, {
+            method: 'POST'
+        });
+        const data = await response.json();
 
-        if (!data || data.length === 0) {
-            lista.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">📋</div>
-                    <h3>No hay nuevas solicitudes</h3>
-                    <p>Cuando te asignen un viaje, aparecerá aquí para que lo aceptes o rechaces</p>
-                </div>
-            `;
-            return;
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al aceptar el viaje');
         }
 
-        let requestsHTML = '';
-        data.forEach(viaje => {
-            const fecha = new Date(viaje.fechaSolicitud).toLocaleDateString('es-CO');
-            const hora = new Date(viaje.fechaSolicitud).toLocaleTimeString('es-CO', {
-                hour: '2-digit', minute: '2-digit'
-            });
-            const clienteNombre = viaje.cliente ? viaje.cliente.nombreCompleto : 'Cliente no disponible';
-            const clienteTelefono = viaje.cliente ? viaje.cliente.telefono : 'No disponible';
+        showNotification('✅ Viaje aceptado correctamente', 'success');
+        loadTravelRequests();
+        loadDashboardStats();
 
-            requestsHTML += `
-                <div class="travel-card">
-                    <div class="travel-header">
-                        <h3>Viaje a ${viaje.destinoNombre}</h3>
-                        <span class="status-badge status-requested">Pendiente de Aceptación</span>
-                    </div>
-
-                    <div class="client-info-section">
-                        <div class="client-name">${clienteNombre}</div>
-                        <div class="client-phone">📞 ${clienteTelefono}</div>
-                    </div>
-
-                    <div class="travel-info">
-                        <div class="info-row">
-                            <span class="info-label">Pasajeros:</span>
-                            <span class="info-value">${viaje.cantidadPasajeros} personas</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Fecha:</span>
-                            <span class="info-value">${fecha}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Hora:</span>
-                            <span class="info-value">${hora}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Destino:</span>
-                            <span class="info-value">${viaje.destinoNombre}</span>
-                        </div>
-                        <div class="cost-badge">
-                            $${viaje.precioFinal || '0'} COP
-                        </div>
-                    </div>
-
-                    <div class="travel-actions">
-                        <button class="btn-accept" onclick="acceptTravel('${viaje.id}')">
-                            ✅ Aceptar Viaje
-                        </button>
-                        <button class="btn-reject" onclick="rejectTravel('${viaje.id}')">
-                            ❌ Rechazar Viaje
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-
-        lista.innerHTML = requestsHTML;
-
-    } catch (err) {
-        console.error("Error cargando solicitudes:", err);
-        lista.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">❌</div>
-                <h3>Error al cargar solicitudes</h3>
-                <p>Intenta nuevamente más tarde</p>
-            </div>
-        `;
+    } catch (error) {
+        showNotification('❌ Error al aceptar el viaje: ' + error.message, 'error');
     }
 }
 
-// === FUNCIONES PARA ACEPTAR Y RECHAZAR VIAJES ===
-async function acceptTravel(travelId) {
-    if (!confirm("¿Estás seguro de aceptar este viaje?\n\nEl estado cambiará a ACEPTADO y podrás iniciarlo cuando estés listo.")) return;
-
+async function rejectTravelRequest(travelId) {
     try {
-        const res = await fetch(`/api/driver/travels/${travelId}/accept`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const response = await fetch(`/api/driver/travels/${travelId}/reject`, {
+            method: 'POST'
         });
+        const data = await response.json();
 
-        if (res.ok) {
-            alert("✅ Viaje aceptado correctamente");
-            await loadTravelRequests();
-            await loadAssignedTravels();
-        } else {
-            const error = await res.json();
-            throw new Error(error.error || "Error al aceptar el viaje");
-        }
-    } catch (err) {
-        alert("❌ Error: " + err.message);
-    }
-}
-
-async function rejectTravel(travelId) {
-    if (!confirm("¿Estás seguro de rechazar este viaje?\n\nEl viaje volverá al estado SOLICITADO y el administrador lo podrá asignar a otro conductor.")) return;
-
-    try {
-        const res = await fetch(`/api/driver/travels/${travelId}/reject`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        if (res.ok) {
-            alert("✅ Viaje rechazado correctamente");
-            await loadTravelRequests();
-        } else {
-            const error = await res.json();
-            throw new Error(error.error || "Error al rechazar el viaje");
-        }
-    } catch (err) {
-        alert("❌ Error: " + err.message);
-    }
-}
-
-// === MÓDULO: VIAJES ASIGNADOS (SIMPLIFICADO - SIN MAPA) ===
-document.getElementById("btn-viajes").addEventListener("click", async (e) => {
-    setActiveMenuItem(e.currentTarget);
-    await loadAssignedTravels();
-});
-
-async function loadAssignedTravels() {
-    content.innerHTML = `
-        <div class="content-header">
-            <h2>Viajes Asignados</h2>
-            <p>Gestiona tus viajes aceptados y en curso.</p>
-        </div>
-        <div id="travel-list-view" class="travel-list-view">
-            <div id="viajes-lista"></div>
-        </div>
-        <div id="travel-detail-view" class="travel-detail-view">
-            <!-- Se llena dinámicamente -->
-        </div>
-    `;
-
-    const lista = document.getElementById("viajes-lista");
-
-    try {
-        const res = await fetch(`/api/driver/${driverId}/travels`);
-        if (!res.ok) throw new Error("Error al obtener viajes");
-        const data = await res.json();
-
-        // Filtrar solo viajes aceptados, asignados y en progreso
-        currentTravels = data.filter(viaje =>
-            viaje.estadoViaje === 'ACCEPTED' ||
-            viaje.estadoViaje === 'ASSIGNED' ||
-            viaje.estadoViaje === 'IN_PROGRESS'
-        );
-
-        if (currentTravels.length === 0) {
-            lista.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">🚗</div>
-                    <h3>No tienes viajes asignados</h3>
-                    <p>Cuando aceptes un viaje de la sección "Solicitudes", aparecerá aquí</p>
-                </div>
-            `;
-            return;
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al rechazar el viaje');
         }
 
-        let viajesHTML = '';
-        currentTravels.forEach(viaje => {
-            const fecha = new Date(viaje.fechaSolicitud).toLocaleDateString('es-CO');
-            const estado = getStatusBadge(viaje.estadoViaje);
-            const clienteNombre = viaje.cliente ? viaje.cliente.nombreCompleto : 'Cliente no disponible';
+        showNotification('✅ Viaje rechazado correctamente', 'success');
+        loadTravelRequests();
+        loadDashboardStats();
 
-            viajesHTML += `
-                <div class="travel-card" onclick="showTravelDetail('${viaje.id}')">
-                    <div class="travel-header">
-                        <h3>Viaje a ${viaje.destinoNombre}</h3>
-                        <span class="status-badge ${estado.class}">${estado.text}</span>
-                    </div>
-                    <div class="travel-info">
-                        <div class="info-row">
-                            <span class="info-label">Cliente:</span>
-                            <span class="info-value">${clienteNombre}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Pasajeros:</span>
-                            <span class="info-value">${viaje.cantidadPasajeros}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Fecha:</span>
-                            <span class="info-value">${fecha}</span>
-                        </div>
-                        <div class="cost-badge">
-                            $${viaje.precioFinal || '0'} COP
-                        </div>
-                    </div>
-                    <div class="action-note">
-                        ${viaje.estadoViaje === 'IN_PROGRESS' ?
-                          '🎯 Ve a "Viaje Activo" para ver el mapa en tiempo real' :
-                          '💡 Haz clic para ver detalles y acciones'}
-                    </div>
-                </div>
-            `;
-        });
-
-        lista.innerHTML = viajesHTML;
-
-    } catch (err) {
-        console.error("Error cargando viajes:", err);
-        lista.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">❌</div>
-                <h3>Error al cargar viajes</h3>
-                <p>Intenta nuevamente más tarde</p>
-            </div>
-        `;
+    } catch (error) {
+        showNotification('❌ Error al rechazar el viaje: ' + error.message, 'error');
     }
 }
 
-// === VISTA DETALLADA DEL VIAJE (SIMPLIFICADA) ===
-async function showTravelDetail(travelId) {
-    const travel = currentTravels.find(t => t.id === travelId);
-    if (!travel) return;
-
-    document.getElementById("travel-list-view").style.display = 'none';
-    const detailView = document.getElementById("travel-detail-view");
-    detailView.style.display = 'block';
-
-    const fecha = new Date(travel.fechaSolicitud).toLocaleDateString('es-CO');
-    const hora = new Date(travel.fechaSolicitud).toLocaleTimeString('es-CO', {
-        hour: '2-digit', minute: '2-digit'
-    });
-    const estado = getStatusBadge(travel.estadoViaje);
-    const clienteNombre = travel.cliente ? travel.cliente.nombreCompleto : 'Cliente no disponible';
-    const clienteTelefono = travel.cliente ? travel.cliente.telefono : 'No disponible';
-
-    let actionButton = '';
-    let actionNote = '';
-
-    if (travel.estadoViaje === 'ACCEPTED' || travel.estadoViaje === 'ASSIGNED') {
-        actionButton = `
-            <button class="btn-start" onclick="startTravel('${travel.id}')">
-                🚗 Iniciar Viaje
-            </button>
-        `;
-        actionNote = `
-            <div class="action-note">
-                💡 Este viaje ha sido aceptado. Prepárate para iniciarlo cuando estés listo.
-            </div>
-        `;
-    } else if (travel.estadoViaje === 'IN_PROGRESS') {
-        actionButton = `
-            <button class="btn-finish" onclick="finishTravel(\"${travel.id}\")">
-                🏁 Finalizar Viaje
-            </button>
-            //ARREGLO
-        `;
-        actionNote = `
-            <div class="action-note">
-                🎯 Ve a la sección "Viaje Activo" para ver el mapa en tiempo real y seguir la ruta
-            </div>
-        `;
-    } else {
-        actionNote = `
-            <div class="action-note">
-                📋 Este viaje está ${estado.text.toLowerCase()}. No requiere acción.
-            </div>
-        `;
-    }
-
-    detailView.innerHTML = `
-        <button class="back-button" onclick="showTravelList()">← Volver a la lista</button>
-
-        <div class="travel-card">
-            <div class="travel-header">
-                <h2>Viaje a ${travel.destinoNombre}</h2>
-                <span class="status-badge ${estado.class}">${estado.text}</span>
-            </div>
-
-            <div class="client-info-section">
-                <div class="client-name">${clienteNombre}</div>
-                <div class="client-phone">📞 ${clienteTelefono}</div>
-            </div>
-
-            <div class="travel-info">
-                <div class="info-row">
-                    <span class="info-label">Pasajeros:</span>
-                    <span class="info-value">${travel.cantidadPasajeros} personas</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Fecha solicitud:</span>
-                    <span class="info-value">${fecha}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Hora solicitud:</span>
-                    <span class="info-value">${hora}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Destino:</span>
-                    <span class="info-value">${travel.destinoNombre}</span>
-                </div>
-                ${travel.fechaInicio ? `
-                <div class="info-row">
-                    <span class="info-label">Iniciado:</span>
-                    <span class="info-value">${new Date(travel.fechaInicio).toLocaleString('es-CO')}</span>
-                </div>
-                ` : ''}
-            </div>
-
-            <div class="cost-badge">
-                Valor del viaje: $${travel.precioFinal || '0'} COP
-            </div>
-
-            ${actionNote}
-            ${actionButton}
-        </div>
-    `;
-}
-
-function showTravelList() {
-    document.getElementById("travel-detail-view").style.display = 'none';
-    document.getElementById("travel-list-view").style.display = 'block';
-}
-
-// === FUNCIONES DE ACCIÓN PARA VIAJES ===
 async function startTravel(travelId) {
-    if (!confirm("¿Estás listo para iniciar este viaje?\n\nEl estado cambiará a EN CURSO y podrás verlo en 'Viaje Activo'.")) return;
-
     try {
-        const res = await fetch(`/api/driver/travels/${travelId}/start`, {
-            method: "POST"
+        const response = await fetch(`/api/driver/travels/${travelId}/start`, {
+            method: 'POST'
         });
+        const data = await response.json();
 
-        if (res.ok) {
-            alert("🚗 Viaje iniciado correctamente");
-            await loadAssignedTravels();
-            // Redirigir automáticamente al módulo de Viaje Activo
-            document.getElementById("btn-viaje").click();
-        } else {
-            const error = await res.json();
-            throw new Error(error.error || "Error al iniciar viaje");
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al iniciar el viaje');
         }
-    } catch (err) {
-        alert("❌ Error: " + err.message);
+
+        showNotification('✅ Viaje iniciado correctamente', 'success');
+        loadAssignedTravels();
+        if (currentSection === 'ruta') {
+            loadActiveTravelForMap();
+        }
+
+    } catch (error) {
+        showNotification('❌ Error al iniciar el viaje: ' + error.message, 'error');
     }
 }
 
 async function finishTravel(travelId) {
-    if (!confirm("¿Has llegado al destino y finalizado el viaje?\n\nEl estado cambiará a FINALIZADO.")) return;
-
     try {
-        const res = await fetch(`/api/driver/travels/${travelId}/finish`, {
-            method: "POST"
+        const response = await fetch(`/api/driver/travels/${travelId}/finish`, {
+            method: 'POST'
         });
+        const data = await response.json();
 
-        if (res.ok) {
-            alert("✅ Viaje finalizado correctamente");
-            await loadAssignedTravels();
-            await loadActiveTravel(); // Actualizar vista de viaje activo
-        } else {
-            const error = await res.json();
-            throw new Error(error.error || "Error al finalizar viaje");
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al finalizar el viaje');
         }
-    } catch (err) {
-        alert("❌ Error: " + err.message);
+
+        showNotification('✅ Viaje finalizado correctamente', 'success');
+        loadAssignedTravels();
+        if (currentSection === 'ruta') {
+            loadActiveTravelForMap();
+        }
+        loadDashboardStats();
+
+    } catch (error) {
+        showNotification('❌ Error al finalizar el viaje: ' + error.message, 'error');
     }
 }
 
-// === MÓDULO: HISTORIAL (CORREGIDO) ===
-document.getElementById("btn-historial").addEventListener("click", async (e) => {
-    setActiveMenuItem(e.currentTarget);
-    content.innerHTML = `
-        <div class="content-header">
-            <h2>Historial de Viajes</h2>
-            <p>Tus viajes finalizados y cancelados.</p>
+// ==================== GESTIÓN DE PERFIL ====================
+function loadProfileData() {
+    if (!currentDriver) return;
+
+    document.getElementById('fullname').value = currentDriver.fullname || '';
+    document.getElementById('lastname').value = currentDriver.lastname || '';
+    document.getElementById('email').value = currentDriver.email || '';
+    document.getElementById('number').value = currentDriver.number || '';
+    document.getElementById('username').value = currentDriver.username || '';
+}
+
+async function loadVehicleInfo() {
+    try {
+        const response = await fetch(`/api/driver/${driverId}/vehicle-info`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al cargar información del vehículo');
+        }
+
+        document.getElementById('vehicle-info').innerHTML = `
+            <div class="travel-info">
+                <div class="info-row">
+                    <span class="info-label">Placa:</span>
+                    <span class="info-value">${data.plate || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Modelo:</span>
+                    <span class="info-value">${data.model || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tipo de licencia:</span>
+                    <span class="info-value">${data.licenseType || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Licencia:</span>
+                    <span class="info-value">${data.license || 'N/A'}</span>
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        document.getElementById('vehicle-info').innerHTML = `
+            <div class="error-state">
+                <p>Error al cargar información del vehículo: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+function setupProfileForm() {
+    const form = document.getElementById('profile-form');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = {
+            fullname: document.getElementById('fullname').value,
+            lastname: document.getElementById('lastname').value,
+            email: document.getElementById('email').value,
+            number: document.getElementById('number').value
+        };
+
+        try {
+            // USAR POST EN LUGAR DE PUT - solución temporal
+            const response = await fetch('/api/driver/profile/update', {
+                method: 'POST', // Cambiado a POST
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Error al actualizar perfil');
+            }
+
+            showNotification('✅ Perfil actualizado correctamente', 'success');
+            await loadDriverProfile();
+
+        } catch (error) {
+            showNotification('❌ Error al actualizar perfil: ' + error.message, 'error');
+        }
+    });
+}
+
+// ==================== NOTIFICACIONES ====================
+function showNotification(message, type) {
+    // Eliminar notificación anterior si existe
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
         </div>
-        <div id="tabla-historial"></div>
     `;
 
-    await loadTravelHistory();
-});
+    document.body.appendChild(notification);
 
-async function loadTravelHistory(page = 0, searchTerm = '') {
-    const tabla = document.getElementById("tabla-historial");
-
-    try {
-        // CORREGIDO: Usar el endpoint correcto para historial paginado
-        const url = `/api/driver/${driverId}/history?page=${page}&size=10${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`;
-        const res = await fetch(url);
-
-        if (!res.ok) {
-            throw new Error(`Error ${res.status}: ${res.statusText}`);
+    // Auto-eliminar después de 5 segundos
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
         }
+    }, 5000);
+}
 
-        const data = await res.json();
-
-        // Manejar diferentes formatos de respuesta
-        let travels, totalPages, currentPage;
-
-        if (data.content !== undefined) {
-            // Respuesta paginada
-            travels = data.content;
-            totalPages = data.totalPages;
-            currentPage = data.number;
-        } else if (Array.isArray(data)) {
-            // Respuesta como array simple
-            travels = data;
-            totalPages = 1;
-            currentPage = 0;
-        } else {
-            // Formato inesperado
-            console.error("Formato de respuesta inesperado:", data);
-            throw new Error("Formato de respuesta no válido");
+// ==================== LOGOUT ====================
+// El logout ahora se maneja a través de panelManager
+// Esta función se mantiene por compatibilidad pero no se usa directamente
+function logout() {
+    if (window.panelManager) {
+        window.panelManager.handleLogout();
+    } else {
+        if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            window.location.href = '/logout';
         }
-
-        if (!travels || travels.length === 0) {
-            tabla.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">📜</div>
-                    <h3>No hay viajes en el historial</h3>
-                    <p>Los viajes completados aparecerán aquí</p>
-                </div>
-            `;
-            return;
-        }
-
-        // Construir interfaz con búsqueda y paginación
-        let tablaHTML = `
-            <div class="search-bar">
-                <input type="text" id="history-search-input" placeholder="Buscar por cliente, destino..." value="${searchTerm}">
-                <button class="btn-start" onclick="searchHistory()">🔍 Buscar</button>
-                ${searchTerm ? `<button class="btn-accept" onclick="clearSearch()">🔄 Limpiar</button>` : ''}
-            </div>
-        `;
-
-        travels.forEach(viaje => {
-            if (!viaje) return; // Skip null/undefined items
-
-            const fecha = viaje.fechaSolicitud ? new Date(viaje.fechaSolicitud).toLocaleDateString('es-CO') : 'N/A';
-            const estado = getStatusBadge(viaje.estadoViaje);
-            const clienteNombre = viaje.cliente ? viaje.cliente.nombreCompleto : 'N/A';
-
-            tablaHTML += `
-                <div class="travel-card">
-                    <div class="travel-header">
-                        <h3>Viaje a ${viaje.destinoNombre || 'Destino desconocido'}</h3>
-                        <span class="status-badge ${estado.class}">${estado.text}</span>
-                    </div>
-                    <div class="travel-info">
-                        <div class="info-row">
-                            <span class="info-label">Cliente:</span>
-                            <span class="info-value">${clienteNombre}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Fecha:</span>
-                            <span class="info-value">${fecha}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Pasajeros:</span>
-                            <span class="info-value">${viaje.cantidadPasajeros || '0'}</span>
-                        </div>
-                        <div class="cost-badge">
-                            $${viaje.precioFinal || '0'} COP
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        // Agregar paginación solo si hay múltiples páginas
-        if (totalPages > 1) {
-            tablaHTML += `<div class="pagination">`;
-
-            if (currentPage > 0) {
-                tablaHTML += `<button class="page-btn" onclick="loadTravelHistory(${currentPage - 1}, '${searchTerm}')">← Anterior</button>`;
-            }
-
-            // Mostrar números de página
-            for (let i = 0; i < totalPages; i++) {
-                if (i === 0 || i === totalPages - 1 || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                    tablaHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadTravelHistory(${i}, '${searchTerm}')">${i + 1}</button>`;
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    tablaHTML += `<span class="page-dots">...</span>`;
-                }
-            }
-
-            if (currentPage < totalPages - 1) {
-                tablaHTML += `<button class="page-btn" onclick="loadTravelHistory(${currentPage + 1}, '${searchTerm}')">Siguiente →</button>`;
-            }
-
-            tablaHTML += `</div>`;
-        }
-
-        tabla.innerHTML = tablaHTML;
-
-    } catch (err) {
-        console.error("Error cargando historial:", err);
-        tabla.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">❌</div>
-                <h3>Error al cargar el historial</h3>
-                <p>${err.message}</p>
-                <button class="btn-start" onclick="loadTravelHistory()" style="margin-top: 15px;">
-                    🔄 Reintentar
-                </button>
-            </div>
-        `;
     }
 }
 
-function searchHistory() {
-    const searchTerm = document.getElementById('history-search-input').value;
-    loadTravelHistory(0, searchTerm);
-}
-
-function clearSearch() {
-    document.getElementById('history-search-input').value = '';
-    loadTravelHistory(0, '');
-}
-
-// === MÓDULO: PERFIL ===
-document.getElementById("btn-perfil").addEventListener("click", async (e) => {
-    setActiveMenuItem(e.currentTarget);
-    await loadProfile();
-});
-
-async function loadProfile() {
-    content.innerHTML = `<div class="content-header"><h2>Perfil</h2><p>Cargando...</p></div>`;
-
-    try {
-        const [profileRes, vehicleRes] = await Promise.all([
-            fetch("/driver/profile"),
-            fetch(`/api/driver/${driverId}/vehicle-info`)
-        ]);
-
-        if (!profileRes.ok) throw new Error("Error al obtener perfil");
-
-        const profile = await profileRes.json();
-        const vehicleInfo = vehicleRes.ok ? await vehicleRes.json() : {};
-
-        content.innerHTML = `
-            <div class="content-header">
-                <h2>Perfil del Conductor</h2>
-                <p>Actualiza tu información personal</p>
-            </div>
-
-            <!-- Foto de perfil -->
-            <div class="profile-form-section">
-                <h3>Foto de Perfil</h3>
-                <div class="profile-picture-upload">
-                    <img id="profile-picture-img" src="${profile.fotoUrl || '/images/default-avatar.png'}" alt="Foto de perfil">
-                    <input type="file" id="profile-picture-input" accept="image/*" style="margin: 15px 0;">
-                    <button onclick="updateProfilePicture()" class="btn-start">📸 Actualizar Foto</button>
-                </div>
-            </div>
-
-            <!-- Información Personal Editable -->
-            <div class="profile-form-section">
-                <h3>Información Personal</h3>
-                <form id="profile-form">
-                    <div class="form-group">
-                        <label>Nombre Completo:</label>
-                        <input type="text" id="nombre" value="${profile.fullname || ''}" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Apellidos:</label>
-                        <input type="text" id="apellido" value="${profile.lastname || ''}" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Teléfono/Celular:</label>
-                        <input type="text" id="telefono" value="${profile.number || ''}" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Correo Electrónico:</label>
-                        <input type="email" id="email" value="${profile.email || ''}" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Nueva Contraseña:</label>
-                        <input type="password" id="password" placeholder="Dejar vacío para no cambiar" class="form-control">
-                    </div>
-                    <button type="submit" class="btn-start" style="width: 100%;">💾 Guardar Cambios</button>
-                </form>
-            </div>
-
-            <!-- Información del Vehículo (solo lectura) -->
-            <div class="profile-form-section">
-                <h3>Información del Vehículo</h3>
-                <div class="form-group">
-                    <label>Placa del Vehículo:</label>
-                    <input type="text" value="${vehicleInfo.placa || 'No disponible'}" class="form-control readonly-field" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Modelo:</label>
-                    <input type="text" value="${vehicleInfo.modelo || 'No disponible'}" class="form-control readonly-field" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Color:</label>
-                    <input type="text" value="${vehicleInfo.color || 'No disponible'}" class="form-control readonly-field" readonly>
-                </div>
-            </div>
-
-            <!-- Información de Documentos (solo lectura) -->
-            <div class="profile-form-section">
-                <h3>Documentos y Licencias</h3>
-                <div class="form-group">
-                    <label>Número de Identificación:</label>
-                    <input type="text" value="${profile.identificacion || 'No disponible'}" class="form-control readonly-field" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Tipo de Licencia:</label>
-                    <input type="text" value="${vehicleInfo.tipoLicencia || 'No disponible'}" class="form-control readonly-field" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Número de Licencia:</label>
-                    <input type="text" value="${vehicleInfo.numeroLicencia || 'No disponible'}" class="form-control readonly-field" readonly>
-                </div>
-                <div class="action-note">
-                    📝 Esta información solo puede ser modificada por el administrador. Contacta con soporte para actualizarla.
-                </div>
+// ==================== FUNCIONES DE MAPA ====================
+function initializeMap(destinationName) {
+    if (!mapboxgl.supported()) {
+        document.getElementById('map').innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+                <p>Tu navegador no soporta Mapbox GL.</p>
+                <button onclick="initializeMap('${destinationName}')">Reintentar</button>
             </div>
         `;
-
-        // Manejar envío del formulario
-        document.getElementById("profile-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            await updateProfile();
-        });
-
-    } catch (err) {
-        console.error("Error cargando perfil:", err);
-        content.innerHTML = `
-            <div class="error-state">
-                <p>❌ No se pudo cargar el perfil. Intenta nuevamente.</p>
-            </div>
-        `;
-    }
-}
-
-async function updateProfile() {
-    const dto = {
-        number: document.getElementById("telefono").value,
-        email: document.getElementById("email").value,
-        fullname: document.getElementById("nombre").value,
-        lastname: document.getElementById("apellido").value,
-        password: document.getElementById("password").value || null
-    };
-
-    try {
-        const res = await fetch("/driver/profile/update", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dto)
-        });
-
-        if (res.ok) {
-            alert("✅ Perfil actualizado correctamente");
-            // Recargar el header con el nuevo nombre
-            await loadDriverProfile();
-        } else {
-            throw new Error("Error del servidor al actualizar perfil");
-        }
-    } catch (err) {
-        alert("❌ Error: " + err.message);
-    }
-}
-
-async function updateProfilePicture() {
-    const fileInput = document.getElementById('profile-picture-input');
-    const file = fileInput.files[0];
-
-    if (!file) {
-        alert('📸 Por favor selecciona una imagen');
         return;
     }
 
-    // Validar tipo de archivo
-    if (!file.type.startsWith('image/')) {
-        alert('❌ Por favor selecciona un archivo de imagen válido');
-        return;
-    }
+    mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    const formData = new FormData();
-    formData.append('file', file);
+    // Coordenadas del hotel (origen fijo)
+    const origin = [-75.49372752027492, 10.524580108158908];
 
-    try {
-        const res = await fetch(`/api/driver/${driverId}/profile/picture`, {
-            method: 'POST',
-            body: formData
+    map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: origin,
+        zoom: 12
+    });
+
+    map.on('load', function() {
+        // Geocodificar el destino para obtener coordenadas
+        geocodeDestination(destinationName);
+    });
+}
+
+function geocodeDestination(destinationName) {
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destinationName)}.json?access_token=${MAPBOX_TOKEN}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.features && data.features.length > 0) {
+                const destination = data.features[0].center;
+                plotRoute(destination);
+            } else {
+                throw new Error('No se encontraron coordenadas para el destino');
+            }
+        })
+        .catch(error => {
+            console.error('Error en geocoding:', error);
+            document.getElementById('map').innerHTML = `
+                <div style="padding: 20px; text-align: center;">
+                    <p>Error al cargar la ruta: ${error.message}</p>
+                </div>
+            `;
         });
+}
 
-        if (res.ok) {
-            const result = await res.json();
-            alert('✅ Foto de perfil actualizada correctamente');
-            document.getElementById('profile-picture-img').src = result.fotoUrl + '?t=' + new Date().getTime(); // Cache bust
-        } else {
-            throw new Error('Error al subir la imagen');
-        }
-    } catch (err) {
-        alert('❌ Error: ' + err.message);
+function plotRoute(destination) {
+    const origin = [-75.49372752027492, 10.524580108158908];
+
+    // Obtener ruta
+    fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.routes && data.routes.length > 0) {
+                const route = data.routes[0].geometry;
+
+                map.addSource('route', {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: route
+                    }
+                });
+
+                map.addLayer({
+                    id: 'route',
+                    type: 'line',
+                    source: 'route',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#007bff',
+                        'line-width': 5,
+                        'line-opacity': 0.75
+                    }
+                });
+
+                // Añadir marcadores
+                new mapboxgl.Marker({ color: '#28a745' })
+                    .setLngLat(origin)
+                    .setPopup(new mapboxgl.Popup().setHTML('<h3>Origen</h3><p>Hotel Estelar Manzanillo del Mar</p>'))
+                    .addTo(map);
+
+                new mapboxgl.Marker({ color: '#dc3545' })
+                    .setLngLat(destination)
+                    .setPopup(new mapboxgl.Popup().setHTML('<h3>Destino</h3>'))
+                    .addTo(map);
+
+                // Ajustar vista para mostrar toda la ruta
+                const bounds = new mapboxgl.LngLatBounds();
+                bounds.extend(origin);
+                bounds.extend(destination);
+                map.fitBounds(bounds, { padding: 50 });
+
+            } else {
+                throw new Error('No se pudo calcular la ruta');
+            }
+        })
+        .catch(error => {
+            console.error('Error calculando ruta:', error);
+        });
+}
+
+// ==================== REFRESH AUTOMÁTICO ====================
+setInterval(() => {
+    if (currentSection === 'solicitudes') {
+        loadTravelRequests();
+    } else if (currentSection === 'viajes') {
+        loadAssignedTravels();
+    } else if (currentSection === 'ruta') {
+        loadActiveTravelForMap();
+    } else if (currentSection === 'inicio') {
+        loadDashboardStats();
     }
-}
-
-// === FUNCIONES UTILITARIAS ===
-function getStatusBadge(status) {
-    const statusMap = {
-        'REQUESTED': { text: 'Solicitado', class: 'status-requested' },
-        'ASSIGNED': { text: 'Asignado', class: 'status-assigned' },
-        'ACCEPTED': { text: 'Aceptado', class: 'status-accepted' },
-        'IN_PROGRESS': { text: 'En Curso', class: 'status-in_progress' },
-        'FINISHED': { text: 'Finalizado', class: 'status-finished' },
-        'CANCELLED': { text: 'Cancelado', class: 'status-cancelled' },
-        'REJECTED': { text: 'Rechazado', class: 'status-rejected' }
-    };
-    return statusMap[status] || { text: status, class: 'status-assigned' };
-}
-
-// === CERRAR SESIÓN ===
-document.getElementById("logoutBtn").addEventListener("click", async () => {
-    await fetch("/logout", { method: "POST" });
-    window.location.href = "/homepage";
-});
-
-// Cargar perfil al iniciar
-loadDriverProfile();
-)}
+}, 30000);

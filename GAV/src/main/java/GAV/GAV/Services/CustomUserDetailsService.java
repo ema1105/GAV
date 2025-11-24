@@ -24,17 +24,37 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Users user = usersRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con username: " + username));
+        try {
+            Users user = usersRepository.findByUsername(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con username: " + username));
 
-        // Convertir el rol de Users a un GrantedAuthority que Spring Security reconozca
-         GrantedAuthority authority = new SimpleGrantedAuthority(user.getRol().name());
+            // Validar que el usuario tenga un rol válido
+            if (user.getRol() == null) {
+                throw new UsernameNotFoundException("Usuario sin rol asignado: " + username);
+            }
 
-        // Retornar el usuario compatible con Spring Security
-        return new User(
-                user.getUsername(),
-                user.getPassword(),
-                Collections.singletonList(authority)
-        );
+            // Validar que el usuario tenga username y password
+            if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+                throw new UsernameNotFoundException("Usuario sin username válido: " + username);
+            }
+
+            if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+                throw new UsernameNotFoundException("Usuario sin contraseña: " + username);
+            }
+
+            GrantedAuthority authority = new SimpleGrantedAuthority(user.getRol().name());
+
+            return new User(
+                    user.getUsername(),
+                    user.getPassword(),
+                    Collections.singletonList(authority)
+            );
+        } catch (UsernameNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            System.err.println("Error al cargar usuario: " + username + " - " + e.getMessage());
+            e.printStackTrace();
+            throw new UsernameNotFoundException("Error al cargar usuario: " + e.getMessage(), e);
+        }
     }
 }
