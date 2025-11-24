@@ -87,10 +87,11 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .sessionManagement(session -> session
+                        .invalidSessionUrl("/login?expired=true")
                         .sessionFixation().migrateSession()
                         .maximumSessions(1)
                         .maxSessionsPreventsLogin(false)
-                        .expiredUrl("/login?expired")
+                        .expiredUrl("/login?expired?=true")
                         .sessionRegistry(sessionRegistry())
                 )
                 .csrf(csrf -> csrf.disable());

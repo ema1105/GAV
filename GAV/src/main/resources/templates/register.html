@@ -5,6 +5,7 @@
   <title>Registro de Cliente - Manzanillo del Mar</title>
   <link rel="stylesheet" th:href="@{/css/register.css}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
@@ -35,7 +36,7 @@
             <div class="input-container">
               <input type="text" id="fullname" name="fullname" required />
               <label for="fullname" class="label">
-                <span class="icon">👤</span>
+                <span class="icon"><i class="fa-solid fa-user"></i></span>
                 Nombre Completo
               </label>
               <div class="underline"></div>
@@ -46,7 +47,7 @@
             <div class="input-container">
               <input type="text" id="lastname" name="lastname" required />
               <label for="lastname" class="label">
-                <span class="icon">📝</span>
+                <span class="icon"><i class="fa-solid fa-id-badge"></i></span>
                 Apellidos Completos
               </label>
               <div class="underline"></div>
@@ -57,7 +58,7 @@
             <div class="input-container">
               <input type="text" id="username" name="username" required />
               <label for="username" class="label">
-                <span class="icon">🔑</span>
+                <span class="icon"><i class="fa-solid fa-user-tag"></i></span>
                 Nombre de Usuario
               </label>
               <div class="underline"></div>
@@ -68,7 +69,7 @@
             <div class="input-container">
               <input type="password" id="password" name="password" required />
               <label for="password" class="label">
-                <span class="icon">🔒</span>
+                <span class="icon"><i class="fa-solid fa-lock"></i></span>
                 Contraseña
               </label>
               <div class="underline"></div>
@@ -79,7 +80,7 @@
             <div class="input-container">
               <input type="email" id="email" name="email" required />
               <label for="email" class="label">
-                <span class="icon">📧</span>
+                <span class="icon"><i class="fa-solid fa-envelope"></i></span>
                 Correo Electrónico
               </label>
               <div class="underline"></div>
@@ -90,8 +91,9 @@
             <div class="input-container">
               <input type="text" id="documentNumber" name="documentNumber" required />
               <label for="documentNumber" class="label">
-                <span class="icon">🆔</span>
-                Número de Documento
+                <span class="icon"><i class="fa-solid fa-id-card"></i></span>
+
+                Documento
               </label>
               <div class="underline"></div>
             </div>
@@ -106,7 +108,7 @@
                 <option value="CEDULA_EXTRANJERIA">Cédula de Extranjería</option>
               </select>
               <label for="documentType" class="label">
-                <span class="icon">📄</span>
+                <span class="icon"><i class="fa-solid fa-file-lines"></i></span>
                 Tipo de Documento
               </label>
               <div class="underline"></div>
@@ -117,7 +119,7 @@
             <div class="input-container">
               <input type="text" id="number" name="number" required />
               <label for="number" class="label">
-                <span class="icon">📱</span>
+                <span class="icon"><i class="fa-solid fa-phone"></i></span>
                 Teléfono
               </label>
               <div class="underline"></div>
@@ -132,7 +134,7 @@
                 <option value="FEMALE">Femenino</option>
               </select>
               <label for="sex" class="label">
-                <span class="icon">⚤</span>
+                <span class="icon"><i class="fa-solid fa-venus-mars"></i></span>
                 Sexo
               </label>
               <div class="underline"></div>
@@ -143,7 +145,7 @@
             <div class="input-container">
               <input type="number" id="age" name="age" required />
               <label for="age" class="label">
-                <span class="icon">🎂</span>
+                <span class="icon"><i class="fa-solid fa-calendar-day"></i></span>
                 Edad
               </label>
               <div class="underline"></div>

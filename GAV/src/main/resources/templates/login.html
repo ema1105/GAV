@@ -5,6 +5,8 @@
     <title>Iniciar Sesión - Manzanillo del Mar</title>
     <link rel="stylesheet" th:href="@{/css/login.css}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 <body>
 
@@ -25,13 +27,22 @@
                 <h2>Iniciar Sesión</h2>
                 <p>Accede a tu cuenta</p>
             </div>
+            <!-- Mensajes -->
+            <div th:if="${msgExpired}" class="alert alert-warning">
+                <p th:text="${msgExpired}"></p>
+            </div>
+
+            <div th:if="${msgError}" class="alert alert-error">
+                <p th:text="${msgError}"></p>
+            </div>
+
 
             <form th:action="@{/login}" method="post" class="form">
                 <div class="input-container">
                     <input type="text" id="username" name="username"
                            autocomplete="username" required />
                     <label for="username" class="label">
-                        <span class="icon">👤</span>
+                        <span class="icon"><i class="fa-solid fa-user"></i></span>
                         Usuario
                     </label>
                     <div class="underline"></div>
@@ -41,7 +52,7 @@
                     <input type="password" id="password" name="password"
                            required />
                     <label for="password" class="label">
-                        <span class="icon">🔒</span>
+                        <span class="icon"><i class="fa-solid fa-lock"></i></span>
                         Contraseña
                     </label>
                     <div class="underline"></div>

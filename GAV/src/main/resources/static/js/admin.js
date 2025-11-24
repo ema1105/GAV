@@ -1,6 +1,39 @@
 // --- Variables globales ---
 let modalAsignarVehiculo; // Declarar en scope global
 
+// Función para mostrar notificaciones
+function showNotification(message, type = 'info', duration = 5000) {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-message">${message}</div>
+        <button class="notification-close">&times;</button>
+    `;
+
+    const closeButton = notification.querySelector('.notification-close');
+    closeButton.addEventListener('click', () => {
+        notification.classList.add('hide');
+        setTimeout(() => notification.remove(), 500);
+    });
+
+    container.appendChild(notification);
+
+    // Forzar reflow para activar la animación
+    void notification.offsetWidth;
+    notification.classList.add('show');
+
+    // Eliminar la notificación después de la duración especificada
+    if (duration > 0) {
+        setTimeout(() => {
+            notification.classList.add('hide');
+            setTimeout(() => notification.remove(), 500);
+        }, duration);
+    }
+}
+
 // Función para mostrar modal de asignar vehículo - EN SCOPE GLOBAL
 async function mostrarModalAsignarVehiculo(driverId, driverName) {
     try {
@@ -110,8 +143,7 @@ async function mostrarModalAsignarVehiculo(driverId, driverName) {
         modalAsignarVehiculo.style.display = 'block';
 
     } catch (error) {
-        console.error("Error al cargar vehículos:", error);
-        alert("Error al cargar la lista de vehículos");
+        showNotification("Error al cargar la lista de vehículos", 'error');
     }
 }
 
@@ -229,67 +261,71 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const tabla = document.getElementById("tabla-pendientes");
 
-        try {
-            const response = await fetch("/api/admin/travels/pending");
-            if (!response.ok) throw new Error("Error al obtener las solicitudes");
-            const data = await response.json();
+        async function cargarSolicitudes() {
+            try {
+                const response = await fetch("/api/admin/travels/pending");
+                if (!response.ok) throw new Error("Error al obtener las solicitudes");
+                const data = await response.json();
 
-            if (data.length === 0) {
-                tabla.innerHTML = `<div class="empty-state"><p>No hay solicitudes pendientes.</p></div>`;
-                return;
-            }
+                if (data.length === 0) {
+                    tabla.innerHTML = `<div class="empty-state"><p>No hay solicitudes pendientes.</p></div>`;
+                    return;
+                }
 
-            let tablaHTML = `
-                <div class="card">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Cliente</th>
-                                <th>Destino</th>
-                                <th>Pasajeros</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            data.forEach(req => {
-                const fecha = new Date(req.fechaSolicitud).toLocaleString('es-CO');
-                tablaHTML += `
-                    <tr>
-                        <td>${req.id}</td>
-                        <td>${req.clienteNombre}</td>
-                        <td>${req.destinoNombre}</td>
-                        <td>${req.cantidadPasajeros}</td>
-                        <td>${fecha}</td>
-                        <td>
-                            <button class="btn-primary btn-asignar" data-id="${req.id}" data-passengers="${req.cantidadPasajeros}">
-                                <span class="btn-icon">👤</span>
-                                Asignar Conductor
-                            </button>
-                        </td>
-                    </tr>
+                let tablaHTML = `
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Destino</th>
+                                    <th>Pasajeros</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                 `;
-            });
 
-            tablaHTML += `</tbody></table></div>`;
-            tabla.innerHTML = tablaHTML;
-
-            // Asignar eventos a los botones de asignar
-            document.querySelectorAll(".btn-asignar").forEach(btn => {
-                btn.addEventListener("click", async () => {
-                    const travelId = btn.getAttribute("data-id");
-                    const passengers = btn.getAttribute("data-passengers");
-                    await mostrarConductoresDisponibles(travelId, passengers);
+                data.forEach(req => {
+                    const fecha = new Date(req.fechaSolicitud).toLocaleString('es-CO');
+                    tablaHTML += `
+                        <tr>
+                            <td>${req.id}</td>
+                            <td>${req.clienteNombre}</td>
+                            <td>${req.destinoNombre}</td>
+                            <td>${req.cantidadPasajeros}</td>
+                            <td>${fecha}</td>
+                            <td>
+                                <button class="btn-primary btn-asignar" data-id="${req.id}" data-passengers="${req.cantidadPasajeros}">
+                                    <span class="btn-icon">👤</span>
+                                    Asignar Conductor
+                                </button>
+                            </td>
+                        </tr>
+                    `;
                 });
-            });
 
-        } catch (error) {
-            console.error("Error:", error);
-            tabla.innerHTML = `<div class="error-state"><p>❌ Error al cargar los datos.</p></div>`;
+                tablaHTML += `</tbody></table></div>`;
+                tabla.innerHTML = tablaHTML;
+
+                // Asignar eventos a los botones de asignar
+                document.querySelectorAll(".btn-asignar").forEach(btn => {
+                    btn.addEventListener("click", async () => {
+                        const travelId = btn.getAttribute("data-id");
+                        const passengers = btn.getAttribute("data-passengers");
+                        await mostrarConductoresDisponibles(travelId, passengers);
+                    });
+                });
+
+            } catch (error) {
+                showNotification("Error al cargar las solicitudes", 'error');
+                tabla.innerHTML = `<div class="error-state"><p>❌ Error al cargar los datos.</p></div>`;
+            }
         }
+
+        cargarSolicitudes();
     });
 
     // Función para mostrar conductores disponibles
@@ -336,34 +372,39 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
         } catch (error) {
-            console.error("Error:", error);
-            alert("Error al cargar conductores disponibles");
+            showNotification("Error al cargar conductores disponibles", 'error');
         }
     }
 
     // Función para asignar conductor
     async function asignarConductor(travelId, driverId) {
         try {
-            const response = await fetch("/api/admin/travels/assign", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ travelId, driverId })
-            });
+        const response = await fetch("/api/admin/travels/assign", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+               
+            },
+            body: JSON.stringify({ travelId, driverId })
+        });
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || "Error al asignar conductor");
-            }
-
-            alert("✅ Conductor asignado correctamente");
-            modalAsignar.style.display = 'none';
-            // Recargar la vista de solicitudes pendientes
-            document.getElementById("btn-pendientes").click();
-        } catch (error) {
-            console.error("Error:", error);
-            alert("❌ Error: " + error.message);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || "Error al asignar conductor");
         }
+
+        showNotification("Conductor asignado correctamente", 'success');
+        modalAsignar.style.display = 'none';
+        
+    
+        document.getElementById("btn-pendientes").click();
+        
+    } catch (error) {
+        console.error("Error al asignar conductor:", error);
+        showNotification("Error al asignar conductor: " + error.message, 'error');
     }
+}
+       
 
     // === GESTIÓN DE CONDUCTORES ===
     document.getElementById("btn-conductores").addEventListener("click", async (e) => {
@@ -582,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
             } catch (error) {
-                console.error(error);
+                showNotification("Error al cargar los conductores", 'error');
                 tabla.innerHTML = `<div class="error-state"><p>❌ Error al cargar los conductores.</p></div>`;
             }
         }
@@ -591,11 +632,10 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const res = await fetch(`/api/admin/drivers/${id}`, { method: "DELETE" });
                 if (!res.ok) throw new Error("No se pudo eliminar el conductor");
-                alert("Conductor eliminado correctamente");
+                showNotification("Conductor eliminado correctamente", 'success');
                 cargarConductores();
             } catch (err) {
-                console.error(err);
-                alert("Error al eliminar el conductor");
+                showNotification("Error al eliminar el conductor", 'error');
             }
         }
 
@@ -623,17 +663,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!res.ok) {
                     const err = await res.json();
-                    alert("❌ Error: " + (err.error || "No se pudo registrar"));
+                    showNotification("Error al registrar conductor: " + (err.error || "No se pudo registrar"), 'error');
                     return;
                 }
 
-                alert("✅ Conductor registrado correctamente");
+                showNotification("Conductor registrado correctamente", 'success');
                 form.reset();
                 cargarConductores();
 
             } catch (err) {
-                console.error("Error:", err);
-                alert("Error al registrar conductor");
+                showNotification("Error al registrar conductor", 'error');
             }
         });
 
@@ -665,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(error.error || "Error al asignar vehículo");
             }
 
-            alert("✅ Vehículo asignado correctamente");
+            showNotification("Vehículo asignado correctamente", 'success');
             modalAsignarVehiculo.style.display = 'none';
             // Recargar la vista actual
             if (document.getElementById("btn-todos-conductores")) {
@@ -675,8 +714,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
         } catch (error) {
-            console.error("Error:", error);
-            alert("❌ Error al asignar vehículo: " + error.message);
+            showNotification("Error al asignar vehículo: " + error.message, 'error');
         }
     });
 
@@ -824,7 +862,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
             } catch (error) {
-                console.error(error);
+                showNotification("Error al cargar los vehículos", 'error');
                 tabla.innerHTML = `<div class="error-state"><p>❌ Error al cargar los vehículos.</p></div>`;
             }
         }
@@ -833,11 +871,10 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const res = await fetch(`/api/admin/cars/${id}`, { method: "DELETE" });
                 if (!res.ok) throw new Error("No se pudo eliminar el vehículo");
-                alert("Vehículo eliminado correctamente");
+                showNotification("Vehículo eliminado correctamente", 'success');
                 cargarVehiculos();
             } catch (err) {
-                console.error(err);
-                alert("Error al eliminar el vehículo");
+                showNotification("Error al eliminar el vehículo", 'error');
             }
         }
 
@@ -860,17 +897,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!res.ok) {
                     const err = await res.json();
-                    alert("❌ Error: " + (err.error || "No se pudo registrar"));
+                    showNotification("Error al registrar vehículo: " + (err.error || "No se pudo registrar"), 'error');
                     return;
                 }
 
-                alert("✅ Vehículo registrado correctamente");
+                showNotification("Vehículo registrado correctamente", 'success');
                 form.reset();
                 cargarVehiculos();
 
             } catch (err) {
-                console.error("Error:", err);
-                alert("Error al registrar vehículo");
+                showNotification("Error al registrar vehículo", 'error');
             }
         });
 
@@ -1046,7 +1082,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
             } catch (error) {
-                console.error(error);
+                showNotification("Error al cargar las rutas", 'error');
                 tabla.innerHTML = `<div class="error-state"><p>❌ Error al cargar las rutas.</p></div>`;
             }
         }
@@ -1072,17 +1108,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!res.ok) {
                     const err = await res.json();
-                    alert("❌ Error: " + (err.error || "No se pudo actualizar"));
+                    showNotification("Error al actualizar ruta: " + (err.error || "No se pudo actualizar"), 'error');
                     return;
                 }
 
-                alert("✅ Ruta actualizada correctamente");
+                showNotification("Ruta actualizada correctamente", 'success');
                 modalEditarRuta.style.display = 'none';
                 cargarRutas();
 
             } catch (err) {
-                console.error("Error:", err);
-                alert("Error al actualizar ruta");
+                showNotification("Error al actualizar ruta", 'error');
             }
         });
 
@@ -1090,11 +1125,10 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const res = await fetch(`/api/admin/locations/${id}`, { method: "DELETE" });
                 if (!res.ok) throw new Error("No se pudo eliminar la ruta");
-                alert("Ruta eliminada correctamente");
+                showNotification("Ruta eliminada correctamente", 'success');
                 cargarRutas();
             } catch (err) {
-                console.error(err);
-                alert("Error al eliminar la ruta");
+                showNotification("Error al eliminar la ruta", 'error');
             }
         }
 
@@ -1117,17 +1151,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!res.ok) {
                     const err = await res.json();
-                    alert("❌ Error: " + (err.error || "No se pudo registrar"));
+                    showNotification("Error al registrar ruta: " + (err.error || "No se pudo registrar"), 'error');
                     return;
                 }
 
-                alert("✅ Ruta registrada correctamente");
+                showNotification("Ruta registrada correctamente", 'success');
                 form.reset();
                 cargarRutas();
 
             } catch (err) {
-                console.error("Error:", err);
-                alert("Error al registrar ruta");
+                showNotification("Error al registrar ruta", 'error');
             }
         });
 
@@ -1198,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 actualizarInfoConductores(page, filteredDrivers.length);
 
             } catch (error) {
-                console.error("Error:", error);
+                showNotification("Error al cargar los conductores", 'error');
                 tabla.innerHTML = `<div class="error-state"><p>❌ Error al cargar los conductores.</p></div>`;
             }
         }
@@ -1409,17 +1442,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!res.ok) {
                     const err = await res.json();
-                    alert("❌ Error: " + (err.error || "No se pudo actualizar"));
+                    showNotification("Error al actualizar conductor: " + (err.error || "No se pudo actualizar"), 'error');
                     return;
                 }
 
-                alert("✅ Conductor actualizado correctamente");
+                showNotification("Conductor actualizado correctamente", 'success');
                 modalEditarConductor.style.display = 'none';
                 cargarTodosConductores(currentPage, searchInput.value);
 
             } catch (err) {
-                console.error("Error:", err);
-                alert("Error al actualizar conductor");
+                showNotification("Error al actualizar conductor", 'error');
             }
         });
 
@@ -1427,11 +1459,10 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const res = await fetch(`/api/admin/drivers/${id}`, { method: "DELETE" });
                 if (!res.ok) throw new Error("No se pudo eliminar el conductor");
-                alert("Conductor eliminado correctamente");
+                showNotification("Conductor eliminado correctamente", 'success');
                 cargarTodosConductores(currentPage, searchInput.value);
             } catch (err) {
-                console.error(err);
-                alert("Error al eliminar el conductor");
+                showNotification("Error al eliminar el conductor", 'error');
             }
         }
 
@@ -1523,7 +1554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 actualizarInfoVehiculos(page, filteredVehicles.length);
 
             } catch (error) {
-                console.error("Error:", error);
+                showNotification("Error al cargar los vehículos", 'error');
                 tabla.innerHTML = `<div class="error-state"><p>❌ Error al cargar los vehículos.</p></div>`;
             }
         }
@@ -1733,17 +1764,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!res.ok) {
                     const err = await res.json();
-                    alert("❌ Error: " + (err.error || "No se pudo actualizar"));
+                    showNotification("Error al actualizar vehículo: " + (err.error || "No se pudo actualizar"), 'error');
                     return;
                 }
 
-                alert("✅ Vehículo actualizado correctamente");
+                showNotification("Vehículo actualizado correctamente", 'success');
                 modalEditarVehiculo.style.display = 'none';
                 cargarTodosVehiculos(currentPage, searchInput.value);
 
             } catch (err) {
-                console.error("Error:", err);
-                alert("Error al actualizar vehículo");
+                showNotification("Error al actualizar vehículo", 'error');
             }
         });
 
@@ -1751,11 +1781,10 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const res = await fetch(`/api/admin/cars/${id}`, { method: "DELETE" });
                 if (!res.ok) throw new Error("No se pudo eliminar el vehículo");
-                alert("Vehículo eliminado correctamente");
+                showNotification("Vehículo eliminado correctamente", 'success');
                 cargarTodosVehiculos(currentPage, searchInput.value);
             } catch (err) {
-                console.error(err);
-                alert("Error al eliminar el vehículo");
+                showNotification("Error al eliminar el vehículo", 'error');
             }
         }
 
@@ -1780,12 +1809,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(error.error || "Error al desasignar vehículo");
                 }
 
-                alert("✅ Vehículo desasignado correctamente");
+                showNotification("Vehículo desasignado correctamente", 'success');
                 cargarTodosVehiculos(currentPage, searchInput.value);
 
             } catch (error) {
-                console.error("Error:", error);
-                alert("❌ Error al desasignar vehículo: " + error.message);
+                showNotification("Error al desasignar el vehículo: " + error.message, 'error');
             }
         }
 
