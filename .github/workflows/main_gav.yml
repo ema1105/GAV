@@ -1,9 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
-
 - name: Build with Maven
   run: mvn -f GAV/pom.xml clean install -DskipTests
-
 on:
   push:
     branches:
@@ -34,7 +32,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          path: GAV/target/*.jar
+          path: '${{ github.workspace }}/target/*.jar'
+
 
   deploy:
     runs-on: windows-latest
@@ -63,4 +62,5 @@ jobs:
           app-name: 'GAV'
           slot-name: 'Production'
           package: '*.jar'
+
 
