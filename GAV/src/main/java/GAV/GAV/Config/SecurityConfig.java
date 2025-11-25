@@ -89,10 +89,16 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .invalidSessionUrl("/login?expired=true")
                         .sessionFixation().migrateSession()
-                        .maximumSessions(1)
+                        .maximumSessions(-1)
                         .maxSessionsPreventsLogin(false)
-                        .expiredUrl("/login?expired?=true")
+                        .expiredUrl("/login?expired=true")
                         .sessionRegistry(sessionRegistry())
+
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(
+                                (req, res, authException) -> res.sendRedirect("/login?expired=true")
+                        )
                 )
                 .csrf(csrf -> csrf.disable());
 
