@@ -1106,84 +1106,202 @@ function initializeMap(destinationName) {
 }
 
 function geocodeDestination(destinationName) {
-    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destinationName)}.json?access_token=${MAPBOX_TOKEN}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.features && data.features.length > 0) {
-                const destination = data.features[0].center;
-                plotRoute(destination);
-            } else {
-                throw new Error('No se encontraron coordenadas para el destino');
+    if (!destinationName || typeof destinationName !== 'string' || destinationName.trim() === '') {
+        throw new Error('El nombre del destino no es válido');
+    }
+
+    // Mostrar indicador de carga
+    const mapElement = document.getElementById('map');
+    mapElement.innerHTML = `
+        <div style="padding: 20px; text-align: center;">
+            <p>Buscando ruta a ${destinationName}...</p>
+            <div class="loading-spinner"></div>
+        </div>
+    `;
+
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destinationName)}.json?access_token=${MAPBOX_TOKEN}&limit=1`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error en la petición: ${response.status} ${response.statusText}`);
             }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.features || data.features.length === 0) {
+                throw new Error('No se encontró la ubicación especificada. Por favor, verifica el nombre del destino.');
+            }
+            
+            const destination = data.features[0].center;
+            const placeName = data.features[0].place_name || destinationName;
+            
+            // Actualizar el nombre del destino en la interfaz
+            const destinationElement = document.querySelector('.route-point.end');
+            if (destinationElement) {
+                destinationElement.innerHTML = `
+                    <strong>Destino:</strong><br>
+                    ${placeName}
+                `;
+            }
+            
+            plotRoute(destination);
         })
         .catch(error => {
             console.error('Error en geocoding:', error);
-            document.getElementById('map').innerHTML = `
-                <div style="padding: 20px; text-align: center;">
-                    <p>Error al cargar la ruta: ${error.message}</p>
+            mapElement.innerHTML = `
+                <div class="error-message">
+                    <p>⚠️ No se pudo cargar la ruta</p>
+                    <p>${error.message || 'Error desconocido al buscar el destino'}</p>
+                    <button onclick="loadSection('ruta')" class="retry-button">Reintentar</button>
                 </div>
             `;
         });
 }
 
 function plotRoute(destination) {
-    const origin = [-75.49372752027492, 10.524580108158908];
+    const origin = [-75.49372752027492, 10.524580108158908]; // [longitud, latitud]
+
+    // Validar coordenadas
+    if (!Array.isArray(destination) || destination.length !== 2 || 
+        isNaN(destination[0]) || isNaN(destination[1])) {
+        console.error('Coordenadas de destino inválidas:', destination);
+        showNotification('Error: Las coordenadas del destino no son válidas', 'error');
+        return;
+    }
+
+    // Mostrar indicador de carga
+    const mapContainer = document.getElementById('map');
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.innerHTML = '<div style="padding: 20px; text-align: center;"><p>Cargando ruta...</p></div>';
+    mapContainer.appendChild(loadingIndicator);
 
     // Obtener ruta
     fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.routes && data.routes.length > 0) {
-                const route = data.routes[0].geometry;
+            // Eliminar indicador de carga
+            if (mapContainer.contains(loadingIndicator)) {
+                mapContainer.removeChild(loadingIndicator);
+            }
 
-                map.addSource('route', {
-                    type: 'geojson',
-                    data: {
-                        type: 'Feature',
-                        properties: {},
-                        geometry: route
-                    }
-                });
+            if (!data.routes || data.routes.length === 0) {
+                throw new Error('No se pudo calcular la ruta. Verifica las direcciones.');
+            }
 
-                map.addLayer({
-                    id: 'route',
-                    type: 'line',
-                    source: 'route',
-                    layout: {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    },
-                    paint: {
-                        'line-color': '#007bff',
-                        'line-width': 5,
-                        'line-opacity': 0.75
-                    }
-                });
+            const route = data.routes[0].geometry;
 
-                // Añadir marcadores
-                new mapboxgl.Marker({ color: '#28a745' })
-                    .setLngLat(origin)
-                    .setPopup(new mapboxgl.Popup().setHTML('<h3>Origen</h3><p>Hotel Estelar Manzanillo del Mar</p>'))
-                    .addTo(map);
-
-                new mapboxgl.Marker({ color: '#dc3545' })
-                    .setLngLat(destination)
-                    .setPopup(new mapboxgl.Popup().setHTML('<h3>Destino</h3>'))
-                    .addTo(map);
-
-                // Ajustar vista para mostrar toda la ruta
-                const bounds = new mapboxgl.LngLatBounds();
-                bounds.extend(origin);
-                bounds.extend(destination);
-                map.fitBounds(bounds, { padding: 50 });
-
+            // Asegurarse de que el mapa esté cargado
+            if (!map.loaded()) {
+                map.on('load', () => addRouteToMap(route, origin, destination));
             } else {
-                throw new Error('No se pudo calcular la ruta');
+                addRouteToMap(route, origin, destination);
             }
         })
         .catch(error => {
-            console.error('Error calculando ruta:', error);
+            console.error('Error al obtener la ruta:', error);
+            showNotification(`Error al cargar la ruta: ${error.message}`, 'error');
+            
+            // Asegurarse de eliminar el indicador de carga en caso de error
+            if (mapContainer.contains(loadingIndicator)) {
+                mapContainer.removeChild(loadingIndicator);
+            }
+            
+            // Mostrar marcadores aunque falle la ruta
+            showFallbackMarkers(origin, destination);
         });
+}
+
+function addRouteToMap(route, origin, destination) {
+    // Eliminar ruta anterior si existe
+    if (map.getSource('route')) {
+        map.removeLayer('route');
+        map.removeSource('route');
+    }
+
+    // Añadir fuente de la ruta
+    map.addSource('route', {
+        type: 'geojson',
+        data: {
+            type: 'Feature',
+            properties: {},
+            geometry: route
+        }
+    });
+
+    // Añadir capa de la ruta
+    map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+        },
+        paint: {
+            'line-color': '#007bff',
+            'line-width': 5,
+            'line-opacity': 0.75
+        }
+    });
+
+    // Mostrar marcadores
+    showMarkers(origin, destination);
+
+    // Ajustar vista para mostrar toda la ruta
+    const bounds = new mapboxgl.LngLatBounds()
+        .extend(origin)
+        .extend(destination);
+    
+    // Asegurar un padding adecuado
+    const padding = {
+        top: 50,
+        bottom: 50,
+        left: 50,
+        right: 50
+    };
+    
+    map.fitBounds(bounds, { 
+        padding: padding,
+        maxZoom: 15 // Asegurar que no se haga zoom demasiado cerca
+    });
+}
+
+function showMarkers(origin, destination) {
+    // Limpiar marcadores existentes
+    document.querySelectorAll('.mapboxgl-marker').forEach(marker => marker.remove());
+
+    // Añadir marcador de origen
+    new mapboxgl.Marker({ color: '#28a745' })
+        .setLngLat(origin)
+        .setPopup(new mapboxgl.Popup({ offset: 25 })
+            .setHTML('<h3>Origen</h3><p>Hotel Estelar Manzanillo del Mar</p>'))
+        .addTo(map);
+
+    // Añadir marcador de destino
+    new mapboxgl.Marker({ color: '#dc3545' })
+        .setLngLat(destination)
+        .setPopup(new mapboxgl.Popup({ offset: 25 })
+            .setHTML('<h3>Destino</h3>'))
+        .addTo(map);
+}
+
+function showFallbackMarkers(origin, destination) {
+    // Mostrar solo los marcadores sin ruta
+    showMarkers(origin, destination);
+    
+    // Ajustar la vista para mostrar ambos marcadores
+    const bounds = new mapboxgl.LngLatBounds()
+        .extend(origin)
+        .extend(destination);
+        
+    map.fitBounds(bounds, { 
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        maxZoom: 15
+    });
 }
 
 // ==================== REFRESH AUTOMÁTICO ====================
